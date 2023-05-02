@@ -1,0 +1,2 @@
+# go-requiring
+A validator
