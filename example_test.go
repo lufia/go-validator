@@ -7,16 +7,22 @@ import (
 )
 
 type Request struct {
-	User string
+	User User
 }
 
-var requestValidator = requiring.Struct(func(s *requiring.RuleSet, r *Request) {
-	s.Add(&r.User, "user", requiring.NotEmpty[string]())
+type User struct {
+	Name string
+}
+
+var requestValidator = requiring.Struct(func(s requiring.StructRuleAdder, r *Request) {
+	s.Add(&r.User, "user", requiring.Struct(func(s requiring.StructRuleAdder, u *User) {
+		s.Add(&u.Name, "name", requiring.NotEmpty[string]())
+	}))
 })
 
 func Example() {
 	var r Request
 	err := requestValidator.Validate(&r)
 	fmt.Println(err)
-	// Output: 'user' is required
+	// Output: 'name' is required
 }

@@ -18,13 +18,19 @@ func NotEmpty[T ~string](opts ...any) Validator {
 }
 
 type notEmptyValidator[T ~string] struct {
-	p NotEmptyViolationPrinter[T]
+	name string
+	p    NotEmptyViolationPrinter[T]
+}
+
+func (r *notEmptyValidator[T]) SetName(name string) {
+	r.name = name
 }
 
 func (r *notEmptyValidator[T]) Validate(v any) error {
 	s := v.(T)
 	if s == "" {
 		return &NotEmptyViolationError[T]{
+			Name:  r.name,
 			Value: s,
 			rule:  r,
 		}
@@ -33,6 +39,7 @@ func (r *notEmptyValidator[T]) Validate(v any) error {
 }
 
 type NotEmptyViolationError[T ~string] struct {
+	Name  string
 	Value T
 	rule  *notEmptyValidator[T]
 	msg   string
@@ -55,6 +62,9 @@ func (e NotEmptyViolationError[T]) Error() string {
 type notEmptyPrinter[T ~string] struct{}
 
 func (notEmptyPrinter[T]) Print(w io.Writer, e NotEmptyViolationError[T]) {
+	if e.Name != "" {
+		fmt.Fprintf(w, "'%s' is ", e.Name)
+	}
 	fmt.Fprintf(w, "required")
 }
 
