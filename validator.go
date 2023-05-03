@@ -2,12 +2,19 @@
 package requiring
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"reflect"
 )
+
+type ViolationError interface {
+	error
+}
+
+type Printer[E ViolationError] interface {
+	Print(w io.Writer, e E)
+}
 
 type Validator interface {
 	Validate(v any) error
@@ -90,59 +97,3 @@ func Struct[T any](build func(s *RuleSet, v *T)) Validator {
 	build(&s, &v)
 	return &s
 }
-
-type ViolationError[T any] interface {
-	error
-	SetPrinter(p Printer[T])
-}
-
-type Printer[T any] interface {
-	Print(w io.Writer, e ViolationError[T])
-}
-
-type RangeMinViolationError[T any] struct {
-	Min, Max int // zero or negative values means unlimited
-	Value    T
-}
-
-func (e *RangeMinViolationError[T]) Error() string {
-	var p rangeMinPrinter[T]
-	var buf bytes.Buffer
-	p.Print(&buf, *e)
-	return buf.String()
-}
-
-type notEmptyPrinter[T any] struct{}
-
-func (notEmptyPrinter[T]) Print(w io.Writer, e RangeMinViolationError[T]) {
-	fmt.Fprintf(w, "requires")
-}
-
-type rangeMinPrinter[T any] struct{}
-
-func (rangeMinPrinter[T]) Print(w io.Writer, e RangeMinViolationError[T]) {
-	fmt.Fprintf(w, "requires")
-}
-
-type notEmptyValidator[T ~string] struct {
-	p Printer[T]
-}
-
-func (f *notEmptyValidator[T]) SetPrinter(p Printer[T]) {
-	f.p = p
-}
-
-func (f *notEmptyValidator[T]) Validate(v any) error {
-	s := v.(T)
-	if s == "" {
-		return &RangeMinViolationError[T]{
-			Min:   1,
-			Value: s,
-		}
-	}
-	return nil
-}
-
-var (
-	NotEmpty Validator = &notEmptyValidator[string]{}
-)

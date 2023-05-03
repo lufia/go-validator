@@ -11,7 +11,7 @@ type Request struct {
 }
 
 var requestValidator = requiring.Struct(func(s *requiring.RuleSet, r *Request) {
-	s.Add(&r.User, "user", requiring.NotEmpty)
+	s.Add(&r.User, "user", requiring.NotEmpty[string]())
 })
 
 func Example() {
