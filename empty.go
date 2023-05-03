@@ -42,21 +42,16 @@ type NotEmptyViolationError[T ~string] struct {
 	Name  string
 	Value T
 	rule  *notEmptyValidator[T]
-	msg   string
 }
 
 func (e NotEmptyViolationError[T]) Error() string {
-	if e.msg != "" {
-		return e.msg
-	}
 	p := e.rule.p
 	if p == nil {
 		p = &notEmptyPrinter[T]{}
 	}
 	var w bytes.Buffer
 	p.Print(&w, e)
-	e.msg = w.String()
-	return e.msg
+	return w.String()
 }
 
 type notEmptyPrinter[T ~string] struct{}
