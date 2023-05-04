@@ -6,30 +6,31 @@ import (
 	"io"
 )
 
-func NotEmpty[T ~string](opts ...any) Validator {
-	var r notEmptyValidator[T]
+func Required[T comparable](opts ...any) Validator {
+	var r requiredValidator[T]
 	for _, opt := range opts {
 		switch v := opt.(type) {
-		case NotEmptyViolationPrinter[T]:
+		case RequiredViolationPrinter[T]:
 			r.p = v
 		}
 	}
 	return &r
 }
 
-type notEmptyValidator[T ~string] struct {
+type requiredValidator[T comparable] struct {
 	name string
-	p    NotEmptyViolationPrinter[T]
+	p    RequiredViolationPrinter[T]
 }
 
-func (r *notEmptyValidator[T]) SetName(name string) {
+func (r *requiredValidator[T]) SetName(name string) {
 	r.name = name
 }
 
-func (r *notEmptyValidator[T]) Validate(v any) error {
+func (r *requiredValidator[T]) Validate(v any) error {
 	s := v.(T)
-	if s == "" {
-		return &NotEmptyViolationError[T]{
+	var v0 T
+	if s == v0 {
+		return &RequiredViolationError[T]{
 			Name:  r.name,
 			Value: s,
 			rule:  r,
@@ -38,37 +39,37 @@ func (r *notEmptyValidator[T]) Validate(v any) error {
 	return nil
 }
 
-type NotEmptyViolationError[T ~string] struct {
+type RequiredViolationError[T comparable] struct {
 	Name  string
 	Value T
-	rule  *notEmptyValidator[T]
+	rule  *requiredValidator[T]
 }
 
-func (e NotEmptyViolationError[T]) Error() string {
+func (e RequiredViolationError[T]) Error() string {
 	p := e.rule.p
 	if p == nil {
-		p = &notEmptyPrinter[T]{}
+		p = &requiredPrinter[T]{}
 	}
 	var w bytes.Buffer
 	p.Print(&w, e)
 	return w.String()
 }
 
-type notEmptyPrinter[T ~string] struct{}
+type requiredPrinter[T comparable] struct{}
 
-func (notEmptyPrinter[T]) Print(w io.Writer, e NotEmptyViolationError[T]) {
+func (requiredPrinter[T]) Print(w io.Writer, e RequiredViolationError[T]) {
 	if e.Name != "" {
 		fmt.Fprintf(w, "'%s' is ", e.Name)
 	}
 	fmt.Fprintf(w, "required")
 }
 
-type NotEmptyViolationPrinter[T ~string] interface {
-	Printer[NotEmptyViolationError[T]]
+type RequiredViolationPrinter[T comparable] interface {
+	Printer[RequiredViolationError[T]]
 }
 
 var (
-	_ Validator                        = (*notEmptyValidator[string])(nil)
-	_ ViolationError                   = (*NotEmptyViolationError[string])(nil)
-	_ NotEmptyViolationPrinter[string] = (*notEmptyPrinter[string])(nil)
+	_ Validator                        = (*requiredValidator[string])(nil)
+	_ ViolationError                   = (*RequiredViolationError[string])(nil)
+	_ RequiredViolationPrinter[string] = (*requiredPrinter[string])(nil)
 )

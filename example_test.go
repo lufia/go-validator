@@ -16,7 +16,7 @@ type User struct {
 
 var requestValidator = requiring.Struct(func(s requiring.StructRuleAdder, r *Request) {
 	s.Add(&r.User, "user", requiring.Struct(func(s requiring.StructRuleAdder, u *User) {
-		s.Add(&u.Name, "name", requiring.NotEmpty[string]())
+		s.Add(&u.Name, "name", requiring.Required[string]())
 	}))
 })
 

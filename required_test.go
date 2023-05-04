@@ -6,29 +6,29 @@ import (
 	"testing"
 )
 
-type testNotEmptyViolationPrinter[T ~string] struct{}
+type testRequiredViolationPrinter[T comparable] struct{}
 
-func (testNotEmptyViolationPrinter[T]) Print(w io.Writer, e NotEmptyViolationError[T]) {
-	fmt.Fprintf(w, "'%s' is empty", e.Value)
+func (testRequiredViolationPrinter[T]) Print(w io.Writer, e RequiredViolationError[T]) {
+	fmt.Fprintf(w, "'%v' is empty", e.Value)
 }
 
-var _ NotEmptyViolationPrinter[string] = (*testNotEmptyViolationPrinter[string])(nil)
+var _ RequiredViolationPrinter[string] = (*testRequiredViolationPrinter[string])(nil)
 
-func TestNotEmptyVerified_string(t *testing.T) {
+func TestRequiredVerified_string(t *testing.T) {
 	tests := []string{
 		"a",
 		"ab",
 		"\n",
 	}
 	for _, s := range tests {
-		err := NotEmpty[string]().Validate(s)
+		err := Required[string]().Validate(s)
 		if err != nil {
 			t.Fatalf("Validate(%q): %v", s, err)
 		}
 	}
 }
 
-func TestNotEmptyViolation_string(t *testing.T) {
+func TestRequiredViolation_string(t *testing.T) {
 	tests := map[string]struct {
 		errstr string
 		opts   []any
@@ -39,13 +39,13 @@ func TestNotEmptyViolation_string(t *testing.T) {
 		"with_printer": {
 			errstr: "'' is empty",
 			opts: []any{
-				&testNotEmptyViolationPrinter[string]{},
+				&testRequiredViolationPrinter[string]{},
 			},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := NotEmpty[string](tt.opts...).Validate("")
+			err := Required[string](tt.opts...).Validate("")
 			if err == nil {
 				t.Fatalf(`Validate("") should return a violation error`)
 			}
