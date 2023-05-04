@@ -79,8 +79,8 @@ func (inRangePrinter[T]) Print(w io.Writer, e InRangeViolationError[T]) {
 		fmt.Fprintf(w, "'%s' is not ", e.Name)
 	}
 	fmt.Fprintf(w, "in range(%v ... %v)",
-		pointer.NewFormatter[T](e.Min),
-		pointer.NewFormatter[T](e.Max))
+		pointer.NewFormatter(e.Min),
+		pointer.NewFormatter(e.Max))
 }
 
 type InRangeViolationPrinter[T ordered] interface {
