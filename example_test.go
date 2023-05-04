@@ -24,5 +24,5 @@ func Example() {
 	var r Request
 	err := requestValidator.Validate(&r)
 	fmt.Println(err)
-	// Output: 'name' is required
+	// Output: the field 'name' cannot be the zero value
 }

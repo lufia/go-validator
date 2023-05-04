@@ -76,9 +76,9 @@ type requiredPrinter[T comparable] struct{}
 
 func (requiredPrinter[T]) Print(w io.Writer, e RequiredViolationError[T]) {
 	if e.Name != "" {
-		fmt.Fprintf(w, "'%s' is ", e.Name)
+		fmt.Fprintf(w, "the field '%s' ", e.Name)
 	}
-	fmt.Fprintf(w, "required")
+	fmt.Fprintf(w, "cannot be the zero value")
 }
 
 type RequiredViolationPrinter[T comparable] interface {

@@ -14,12 +14,12 @@ func (testRequiredViolationPrinter[T]) Print(w io.Writer, e RequiredViolationErr
 
 var _ RequiredViolationPrinter[string] = (*testRequiredViolationPrinter[string])(nil)
 
-func TestRequiredVerified_string(t *testing.T) {
+func TestRequired(t *testing.T) {
 	t.Run("string", func(t *testing.T) {
 		v := Required[string]()
 		testValidate(t, v, "a", "")
 		testValidate(t, v, "ab", "")
-		testValidate(t, v, "", "required")
+		testValidate(t, v, "", "cannot be the zero value")
 	})
 	t.Run("string with printer", func(t *testing.T) {
 		v := Required[string](
