@@ -16,9 +16,9 @@ type User struct {
 }
 
 var requestValidator = validator.Struct(func(s validator.StructRuleAdder, r *Request) {
-	s.Add(&r.User, "user", validator.Struct(func(s validator.StructRuleAdder, u *User) {
-		s.Add(&u.ID, "id", validator.Length[string](5, 10))
-		s.Add(&u.Name, "name", validator.Required[string]())
+	s.Add(validator.Field(&r.User, "user"), validator.Struct(func(s validator.StructRuleAdder, u *User) {
+		s.Add(validator.Field(&u.ID, "id"), validator.Length[string](5, 10))
+		s.Add(validator.Field(&u.Name, "name"), validator.Required[string]())
 	}))
 })
 
