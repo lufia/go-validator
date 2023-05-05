@@ -22,21 +22,15 @@ func MinLength[T ~string](n int, opts ...any) Validator {
 }
 
 type minLengthValidator[T ~string] struct {
-	name string
-	min  int
-	p    MinLengthViolationPrinter[T]
-	pp   InvalidTypePrinter
-}
-
-func (r *minLengthValidator[T]) SetName(name string) {
-	r.name = name
+	min int
+	p   MinLengthViolationPrinter[T]
+	pp  InvalidTypePrinter
 }
 
 func (r *minLengthValidator[T]) Validate(v any) error {
 	s, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
-			Name:  r.name,
 			Value: v,
 			Type:  reflect.TypeOf(s),
 			p:     r.pp,
@@ -45,7 +39,6 @@ func (r *minLengthValidator[T]) Validate(v any) error {
 	a := []rune(s)
 	if len(a) < r.min {
 		return &MinLengthViolationError[T]{
-			Name:  r.name,
 			Value: s,
 			Min:   r.min,
 			rule:  r,
@@ -55,7 +48,6 @@ func (r *minLengthValidator[T]) Validate(v any) error {
 }
 
 type MinLengthViolationError[T ~string] struct {
-	Name  string
 	Value T
 	Min   int
 	rule  *minLengthValidator[T]
@@ -74,11 +66,7 @@ func (e MinLengthViolationError[T]) Error() string {
 type minLengthPrinter[T ~string] struct{}
 
 func (minLengthPrinter[T]) Print(w io.Writer, e MinLengthViolationError[T]) {
-	fmt.Fprintf(w, "the length ")
-	if e.Name != "" {
-		fmt.Fprintf(w, "of the field '%s' ", e.Name)
-	}
-	fmt.Fprintf(w, "must be no less than %v", e.Min)
+	fmt.Fprintf(w, "the length must be no less than %v", e.Min)
 }
 
 type MinLengthViolationPrinter[T ~string] interface {
@@ -106,21 +94,15 @@ func MaxLength[T ~string](n int, opts ...any) Validator {
 }
 
 type maxLengthValidator[T ~string] struct {
-	name string
-	max  int
-	p    MaxLengthViolationPrinter[T]
-	pp   InvalidTypePrinter
-}
-
-func (r *maxLengthValidator[T]) SetName(name string) {
-	r.name = name
+	max int
+	p   MaxLengthViolationPrinter[T]
+	pp  InvalidTypePrinter
 }
 
 func (r *maxLengthValidator[T]) Validate(v any) error {
 	s, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
-			Name:  r.name,
 			Value: v,
 			Type:  reflect.TypeOf(s),
 			p:     r.pp,
@@ -129,7 +111,6 @@ func (r *maxLengthValidator[T]) Validate(v any) error {
 	a := []rune(s)
 	if len(a) > r.max {
 		return &MaxLengthViolationError[T]{
-			Name:  r.name,
 			Value: s,
 			Max:   r.max,
 			rule:  r,
@@ -139,7 +120,6 @@ func (r *maxLengthValidator[T]) Validate(v any) error {
 }
 
 type MaxLengthViolationError[T ~string] struct {
-	Name  string
 	Value T
 	Max   int
 	rule  *maxLengthValidator[T]
@@ -158,11 +138,7 @@ func (e MaxLengthViolationError[T]) Error() string {
 type maxLengthPrinter[T ~string] struct{}
 
 func (maxLengthPrinter[T]) Print(w io.Writer, e MaxLengthViolationError[T]) {
-	fmt.Fprintf(w, "the length ")
-	if e.Name != "" {
-		fmt.Fprintf(w, "of the field '%s' ", e.Name)
-	}
-	fmt.Fprintf(w, "must be no greater than %v", e.Max)
+	fmt.Fprintf(w, "the length must be no greater than %v", e.Max)
 }
 
 type MaxLengthViolationPrinter[T ~string] interface {
@@ -191,21 +167,15 @@ func Length[T ~string](min, max int, opts ...any) Validator {
 }
 
 type lengthValidator[T ~string] struct {
-	name     string
 	min, max int
 	p        LengthViolationPrinter[T]
 	pp       InvalidTypePrinter
-}
-
-func (r *lengthValidator[T]) SetName(name string) {
-	r.name = name
 }
 
 func (r *lengthValidator[T]) Validate(v any) error {
 	s, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
-			Name:  r.name,
 			Value: v,
 			Type:  reflect.TypeOf(s),
 			p:     r.pp,
@@ -214,7 +184,6 @@ func (r *lengthValidator[T]) Validate(v any) error {
 	a := []rune(s)
 	if len(a) < r.min || len(a) > r.max {
 		return &LengthViolationError[T]{
-			Name:  r.name,
 			Value: s,
 			Min:   r.min,
 			Max:   r.max,
@@ -225,7 +194,6 @@ func (r *lengthValidator[T]) Validate(v any) error {
 }
 
 type LengthViolationError[T ~string] struct {
-	Name     string
 	Value    T
 	Min, Max int
 	rule     *lengthValidator[T]
@@ -244,11 +212,7 @@ func (e LengthViolationError[T]) Error() string {
 type lengthPrinter[T ~string] struct{}
 
 func (lengthPrinter[T]) Print(w io.Writer, e LengthViolationError[T]) {
-	fmt.Fprintf(w, "the length ")
-	if e.Name != "" {
-		fmt.Fprintf(w, "of the field '%s' ", e.Name)
-	}
-	fmt.Fprintf(w, "must be in range(%v ... %v)", e.Min, e.Max)
+	fmt.Fprintf(w, "the length must be in range(%v ... %v)", e.Min, e.Max)
 }
 
 type LengthViolationPrinter[T ~string] interface {

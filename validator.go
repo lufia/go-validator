@@ -17,12 +17,10 @@ type Printer[E ViolationError] interface {
 }
 
 type Validator interface {
-	SetName(name string)
 	Validate(v any) error
 }
 
 type InvalidTypeError struct {
-	Name  string
 	Value any          // passed value
 	Type  reflect.Type // expected type
 
@@ -42,9 +40,6 @@ func (e InvalidTypeError) Error() string {
 type invalidTypePrinter struct{}
 
 func (invalidTypePrinter) Print(w io.Writer, e InvalidTypeError) {
-	if e.Name != "" {
-		fmt.Fprintf(w, "'%s' is ", e.Name)
-	}
 	fmt.Fprintf(w, "the value %v is %T, not %v", e.Value, e.Value, e.Type)
 }
 

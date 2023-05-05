@@ -27,7 +27,7 @@ func TestRequired(t *testing.T) {
 			&testInvalidTypePrinter{},
 		)
 		testValidate(t, v, "", "'' is empty")
-		testValidate(t, v, 0, "'' int(0) vs string")
+		testValidate(t, v, 0, "int(0) vs string")
 	})
 	t.Run("int", func(t *testing.T) {
 		v := Required[int]()

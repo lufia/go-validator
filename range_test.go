@@ -43,7 +43,7 @@ func TestMin(t *testing.T) {
 			&testInvalidTypePrinter{},
 		)
 		testValidate(t, v, 2, "'2' is less than 3")
-		testValidate(t, v, 3.0, "'' float64(3) vs int")
+		testValidate(t, v, 3.0, "float64(3) vs int")
 	})
 }
 
@@ -60,7 +60,7 @@ func TestMax(t *testing.T) {
 			&testInvalidTypePrinter{},
 		)
 		testValidate(t, v, 4, "'4' is greater than 3")
-		testValidate(t, v, 3.0, "'' float64(3) vs int")
+		testValidate(t, v, 3.0, "float64(3) vs int")
 	})
 }
 
@@ -78,6 +78,6 @@ func TestInRange(t *testing.T) {
 			&testInvalidTypePrinter{},
 		)
 		testValidate(t, v, 4, "'4' is out of range(1, 3)")
-		testValidate(t, v, 3.0, "'' float64(3) vs int")
+		testValidate(t, v, 3.0, "float64(3) vs int")
 	})
 }

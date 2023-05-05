@@ -28,21 +28,15 @@ func Min[T ordered](n T, opts ...any) Validator {
 }
 
 type minValidator[T ordered] struct {
-	name string
-	min  T
-	p    MinViolationPrinter[T]
-	pp   InvalidTypePrinter
-}
-
-func (r *minValidator[T]) SetName(name string) {
-	r.name = name
+	min T
+	p   MinViolationPrinter[T]
+	pp  InvalidTypePrinter
 }
 
 func (r *minValidator[T]) Validate(v any) error {
 	n, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
-			Name:  r.name,
 			Value: v,
 			Type:  reflect.TypeOf(n),
 			p:     r.pp,
@@ -50,7 +44,6 @@ func (r *minValidator[T]) Validate(v any) error {
 	}
 	if n < r.min {
 		return &MinViolationError[T]{
-			Name:  r.name,
 			Value: n,
 			Min:   r.min,
 			rule:  r,
@@ -60,7 +53,6 @@ func (r *minValidator[T]) Validate(v any) error {
 }
 
 type MinViolationError[T ordered] struct {
-	Name  string
 	Value T
 	Min   T
 	rule  *minValidator[T]
@@ -79,9 +71,6 @@ func (e MinViolationError[T]) Error() string {
 type minPrinter[T ordered] struct{}
 
 func (minPrinter[T]) Print(w io.Writer, e MinViolationError[T]) {
-	if e.Name != "" {
-		fmt.Fprintf(w, "the field '%s' ", e.Name)
-	}
 	fmt.Fprintf(w, "must be no less than %v", e.Min)
 }
 
@@ -110,21 +99,15 @@ func Max[T ordered](n T, opts ...any) Validator {
 }
 
 type maxValidator[T ordered] struct {
-	name string
-	max  T
-	p    MaxViolationPrinter[T]
-	pp   InvalidTypePrinter
-}
-
-func (r *maxValidator[T]) SetName(name string) {
-	r.name = name
+	max T
+	p   MaxViolationPrinter[T]
+	pp  InvalidTypePrinter
 }
 
 func (r *maxValidator[T]) Validate(v any) error {
 	n, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
-			Name:  r.name,
 			Value: v,
 			Type:  reflect.TypeOf(n),
 			p:     r.pp,
@@ -132,7 +115,6 @@ func (r *maxValidator[T]) Validate(v any) error {
 	}
 	if n > r.max {
 		return &MaxViolationError[T]{
-			Name:  r.name,
 			Value: n,
 			Max:   r.max,
 			rule:  r,
@@ -142,7 +124,6 @@ func (r *maxValidator[T]) Validate(v any) error {
 }
 
 type MaxViolationError[T ordered] struct {
-	Name  string
 	Value T
 	Max   T
 	rule  *maxValidator[T]
@@ -161,9 +142,6 @@ func (e MaxViolationError[T]) Error() string {
 type maxPrinter[T ordered] struct{}
 
 func (maxPrinter[T]) Print(w io.Writer, e MaxViolationError[T]) {
-	if e.Name != "" {
-		fmt.Fprintf(w, "the field '%s' ", e.Name)
-	}
 	fmt.Fprintf(w, "must be no greater than %v", e.Max)
 }
 
@@ -193,21 +171,15 @@ func InRange[T ordered](min, max T, opts ...any) Validator {
 }
 
 type inRangeValidator[T ordered] struct {
-	name     string
 	min, max T
 	p        InRangeViolationPrinter[T]
 	pp       InvalidTypePrinter
-}
-
-func (r *inRangeValidator[T]) SetName(name string) {
-	r.name = name
 }
 
 func (r *inRangeValidator[T]) Validate(v any) error {
 	n, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
-			Name:  r.name,
 			Value: v,
 			Type:  reflect.TypeOf(n),
 			p:     r.pp,
@@ -215,7 +187,6 @@ func (r *inRangeValidator[T]) Validate(v any) error {
 	}
 	if n < r.min || n > r.max {
 		return &InRangeViolationError[T]{
-			Name:  r.name,
 			Value: n,
 			Min:   r.min,
 			Max:   r.max,
@@ -226,7 +197,6 @@ func (r *inRangeValidator[T]) Validate(v any) error {
 }
 
 type InRangeViolationError[T ordered] struct {
-	Name     string
 	Value    T
 	Min, Max T
 	rule     *inRangeValidator[T]
@@ -245,9 +215,6 @@ func (e InRangeViolationError[T]) Error() string {
 type inRangePrinter[T ordered] struct{}
 
 func (inRangePrinter[T]) Print(w io.Writer, e InRangeViolationError[T]) {
-	if e.Name != "" {
-		fmt.Fprintf(w, "the field '%s' ", e.Name)
-	}
 	fmt.Fprintf(w, "must be in range(%v ... %v)", e.Min, e.Max)
 }
 

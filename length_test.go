@@ -43,7 +43,7 @@ func TestMinLength(t *testing.T) {
 			&testInvalidTypePrinter{},
 		)
 		testValidate(t, v, "ab", "'ab' is less than 3")
-		testValidate(t, v, 123, "'' int(123) vs string")
+		testValidate(t, v, 123, "int(123) vs string")
 	})
 }
 
@@ -60,7 +60,7 @@ func TestMaxLength(t *testing.T) {
 			&testInvalidTypePrinter{},
 		)
 		testValidate(t, v, "1234", "'1234' is greater than 3")
-		testValidate(t, v, 123, "'' int(123) vs string")
+		testValidate(t, v, 123, "int(123) vs string")
 	})
 }
 
@@ -78,6 +78,6 @@ func TestLength(t *testing.T) {
 			&testInvalidTypePrinter{},
 		)
 		testValidate(t, v, "1234", "'1234' is out of range(1, 3)")
-		testValidate(t, v, 3, "'' int(3) vs string")
+		testValidate(t, v, 3, "int(3) vs string")
 	})
 }

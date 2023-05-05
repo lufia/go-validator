@@ -9,7 +9,7 @@ import (
 type testInvalidTypePrinter struct{}
 
 func (testInvalidTypePrinter) Print(w io.Writer, e InvalidTypeError) {
-	fmt.Fprintf(w, "'%s' %[2]T(%[2]v) vs %[3]v", e.Name, e.Value, e.Type)
+	fmt.Fprintf(w, "%[1]T(%[1]v) vs %[2]v", e.Value, e.Type)
 }
 
 var _ InvalidTypePrinter = (*testInvalidTypePrinter)(nil)

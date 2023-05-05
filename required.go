@@ -26,20 +26,14 @@ func Required[T comparable](opts ...any) Validator {
 }
 
 type requiredValidator[T comparable] struct {
-	name string
-	p    RequiredViolationPrinter[T]
-	pp   InvalidTypePrinter
-}
-
-func (r *requiredValidator[T]) SetName(name string) {
-	r.name = name
+	p  RequiredViolationPrinter[T]
+	pp InvalidTypePrinter
 }
 
 func (r *requiredValidator[T]) Validate(v any) error {
 	s, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
-			Name:  r.name,
 			Value: v,
 			Type:  reflect.TypeOf(s),
 			p:     r.pp,
@@ -48,7 +42,6 @@ func (r *requiredValidator[T]) Validate(v any) error {
 	var v0 T
 	if s == v0 {
 		return &RequiredViolationError[T]{
-			Name:  r.name,
 			Value: s,
 			rule:  r,
 		}
@@ -57,7 +50,6 @@ func (r *requiredValidator[T]) Validate(v any) error {
 }
 
 type RequiredViolationError[T comparable] struct {
-	Name  string
 	Value T
 	rule  *requiredValidator[T]
 }
@@ -75,9 +67,6 @@ func (e RequiredViolationError[T]) Error() string {
 type requiredPrinter[T comparable] struct{}
 
 func (requiredPrinter[T]) Print(w io.Writer, e RequiredViolationError[T]) {
-	if e.Name != "" {
-		fmt.Fprintf(w, "the field '%s' ", e.Name)
-	}
 	fmt.Fprintf(w, "cannot be the zero value")
 }
 
