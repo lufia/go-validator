@@ -29,3 +29,23 @@ func testValidate(t *testing.T, v Validator, p any, e string) {
 		t.Errorf("Validate(%v) = %v; want %v", p, err, e)
 	}
 }
+
+func TestJoin(t *testing.T) {
+	tests := map[string]struct {
+		num int
+		vs  []Validator
+	}{
+		"none":   {0, nil},
+		"simple": {1, []Validator{Min(1)}},
+		"multi":  {2, []Validator{Min(1), Max(10)}},
+		"nested": {3, []Validator{Required[int](), Join(Min(10), Max(20))}},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			v := Join(tt.vs...).(*joinValidator)
+			if n := len(v.vs); n != tt.num {
+				t.Errorf("got %d; want %d", n, tt.num)
+			}
+		})
+	}
+}

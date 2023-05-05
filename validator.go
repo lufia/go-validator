@@ -3,6 +3,7 @@ package validator
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -18,6 +19,32 @@ type Printer[E ViolationError] interface {
 
 type Validator interface {
 	Validate(v any) error
+}
+
+func Join(vs ...Validator) Validator {
+	var a []Validator
+	for _, v := range vs {
+		if p, ok := v.(*joinValidator); ok {
+			a = append(a, p.vs...)
+		} else {
+			a = append(a, v)
+		}
+	}
+	return &joinValidator{vs: a}
+}
+
+type joinValidator struct {
+	vs []Validator
+}
+
+func (r *joinValidator) Validate(v any) error {
+	var errs []error
+	for _, p := range r.vs {
+		if err := p.Validate(v); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
 }
 
 type InvalidTypeError struct {
