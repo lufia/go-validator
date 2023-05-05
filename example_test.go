@@ -1,9 +1,9 @@
-package requiring_test
+package validator_test
 
 import (
 	"fmt"
 
-	"github.com/lufia/go-requiring"
+	"github.com/lufia/go-validator"
 )
 
 type Request struct {
@@ -15,10 +15,10 @@ type User struct {
 	Name string
 }
 
-var requestValidator = requiring.Struct(func(s requiring.StructRuleAdder, r *Request) {
-	s.Add(&r.User, "user", requiring.Struct(func(s requiring.StructRuleAdder, u *User) {
-		s.Add(&u.ID, "id", requiring.Length[string](5, 10))
-		s.Add(&u.Name, "name", requiring.Required[string]())
+var requestValidator = validator.Struct(func(s validator.StructRuleAdder, r *Request) {
+	s.Add(&r.User, "user", validator.Struct(func(s validator.StructRuleAdder, u *User) {
+		s.Add(&u.ID, "id", validator.Length[string](5, 10))
+		s.Add(&u.Name, "name", validator.Required[string]())
 	}))
 })
 

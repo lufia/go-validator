@@ -1,3 +1,3 @@
-package requiring
+package validator
 
 // TODO: implement regexp

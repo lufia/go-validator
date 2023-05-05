@@ -1,5 +1,5 @@
-// Package requiring provides utilities for validating any types.
-package requiring
+// Package validator provides utilities for validating any types.
+package validator
 
 import (
 	"bytes"

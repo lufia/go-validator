@@ -1,4 +1,4 @@
-package requiring
+package validator
 
 import (
 	"testing"
