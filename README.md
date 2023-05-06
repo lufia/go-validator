@@ -1,4 +1,4 @@
-# go-requiring
+# go-validator
 A validator
 
 ## motivation
