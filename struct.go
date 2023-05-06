@@ -71,6 +71,17 @@ func (e StructRuleViolationError[T]) Error() string {
 	return w.String()
 }
 
+func (e StructRuleViolationError[T]) Unwrap() []error {
+	if len(e.Errors) == 0 {
+		return nil
+	}
+	errs := make([]error, 0, len(e.Errors))
+	for _, err := range e.Errors {
+		errs = append(errs, err)
+	}
+	return errs
+}
+
 type structRulePrinter[T any] struct{}
 
 func (structRulePrinter[T]) Print(w io.Writer, e StructRuleViolationError[T]) {
@@ -84,9 +95,9 @@ type StructRuleViolationPrinter[T any] interface {
 }
 
 var (
-	_ Validator                            = (*StructRuleValidator[struct{}])(nil)
-	_ ViolationError                       = (*StructRuleViolationError[struct{}])(nil)
-	_ StructRuleViolationPrinter[struct{}] = (*structRulePrinter[struct{}])(nil)
+	_ Validator                       = (*StructRuleValidator[any])(nil)
+	_ ViolationError                  = (*StructRuleViolationError[any])(nil)
+	_ StructRuleViolationPrinter[any] = (*structRulePrinter[any])(nil)
 )
 
 type StructRuleAdder interface {
@@ -99,7 +110,7 @@ type structRule[T any] struct {
 }
 
 func (r *structRule[T]) Add(field StructField, vs ...Validator) {
-	offset := field.offsetOf(r.base)
+	offset := field.offsetFrom(r.base)
 	f := lookupStructField(r.base, offset)
 	r.fields[field.Name()] = &structFieldRuleValidator{
 		field: field,
@@ -119,7 +130,7 @@ func lookupStructField(p any, offset uintptr) reflect.StructField {
 	panic("the pointer refers out of the struct")
 }
 
-var _ StructRuleAdder = (*structRule[struct{}])(nil)
+var _ StructRuleAdder = (*structRule[any])(nil)
 
 type structFieldRuleValidator struct {
 	field StructField
@@ -158,13 +169,7 @@ func (e StructFieldRuleViolationError[T]) Error() string {
 type structFieldRulePrinter[T any] struct{}
 
 func (structFieldRulePrinter[T]) Print(w io.Writer, e StructFieldRuleViolationError[T]) {
-	errs, ok := e.Err.(interface{ Unwrap() []error })
-	if !ok {
-		// The structFieldRuleValidator.Validate always returns any errors
-		// with errors.Join.
-		panic("unexpected")
-	}
-	for i, err := range errs.Unwrap() {
+	for i, err := range flattenErrors(e.Err) {
 		if i > 0 {
 			w.Write([]byte("\n"))
 		}
@@ -172,14 +177,26 @@ func (structFieldRulePrinter[T]) Print(w io.Writer, e StructFieldRuleViolationEr
 	}
 }
 
+func flattenErrors(err error) []error {
+	var errs []error
+	e, ok := err.(interface{ Unwrap() []error })
+	if !ok {
+		return []error{err}
+	}
+	for _, err := range e.Unwrap() {
+		errs = append(errs, flattenErrors(err)...)
+	}
+	return errs
+}
+
 type StructFieldRuleViolationPrinter[T any] interface {
 	Printer[StructFieldRuleViolationError[T]]
 }
 
 var (
-	_ Validator                                 = (*structFieldRuleValidator)(nil)
-	_ ViolationError                            = (*StructFieldRuleViolationError[struct{}])(nil)
-	_ StructFieldRuleViolationPrinter[struct{}] = (*structFieldRulePrinter[struct{}])(nil)
+	_ Validator                            = (*structFieldRuleValidator)(nil)
+	_ ViolationError                       = (*StructFieldRuleViolationError[any])(nil)
+	_ StructFieldRuleViolationPrinter[any] = (*structFieldRulePrinter[any])(nil)
 )
 
 func Field[T any](p *T, name string, opts ...any) StructField {
@@ -198,7 +215,7 @@ func (f *structField[T]) Name() string {
 	return f.name
 }
 
-func (f *structField[T]) offsetOf(base any) uintptr {
+func (f *structField[T]) offsetFrom(base any) uintptr {
 	bp := reflect.ValueOf(base).Pointer()
 	pp := reflect.ValueOf(f.p).Pointer()
 	return pp - bp
@@ -219,7 +236,7 @@ func (f *structField[T]) createError(v any, err error) ViolationError {
 
 type StructField interface {
 	Name() string
-	offsetOf(base any) uintptr
+	offsetFrom(base any) uintptr
 	valueOf(base any, index []int) any
 	createError(v any, err error) ViolationError
 }
