@@ -13,27 +13,95 @@ func Struct[T any](build func(s StructRuleAdder, v *T)) *StructRuleValidator[T] 
 		s StructRuleValidator[T]
 		v T
 	)
-	s.base = &v
-	build(&s, &v)
+	rule := structRule[T]{
+		base:   &v,
+		fields: make(map[string]*structFieldRuleValidator),
+	}
+	build(&rule, &v)
+	s.rule = &rule
 	return &s
 }
+
+type StructRuleValidator[T any] struct {
+	rule *structRule[T]
+	p    StructRuleViolationPrinter[T]
+}
+
+func (r *StructRuleValidator[T]) WithPrinter(p StructRuleViolationPrinter[T]) *StructRuleValidator[T] {
+	rr := *r
+	rr.p = p
+	return &rr
+}
+
+func (r *StructRuleValidator[T]) Validate(v any) error {
+	p := reflect.ValueOf(v)
+	if p.Kind() == reflect.Pointer {
+		p = p.Elem()
+	}
+	base := p.Interface()
+	errs := make(map[string]error)
+	for name, rule := range r.rule.fields {
+		if err := rule.Validate(base); err != nil {
+			errs[name] = err
+		}
+	}
+	if len(errs) > 0 {
+		return &StructRuleViolationError[T]{
+			Value:  r.rule.base,
+			Errors: errs,
+			rule:   r,
+		}
+	}
+	return nil
+}
+
+type StructRuleViolationError[T any] struct {
+	Value  *T
+	Errors map[string]error
+	rule   *StructRuleValidator[T]
+}
+
+func (e StructRuleViolationError[T]) Error() string {
+	p := e.rule.p
+	if p == nil {
+		p = &structRulePrinter[T]{}
+	}
+	var w bytes.Buffer
+	p.Print(&w, e)
+	return w.String()
+}
+
+type structRulePrinter[T any] struct{}
+
+func (structRulePrinter[T]) Print(w io.Writer, e StructRuleViolationError[T]) {
+	for _, err := range e.Errors {
+		fmt.Fprintln(w, err)
+	}
+}
+
+type StructRuleViolationPrinter[T any] interface {
+	Printer[StructRuleViolationError[T]]
+}
+
+var (
+	_ Validator                            = (*StructRuleValidator[struct{}])(nil)
+	_ ViolationError                       = (*StructRuleViolationError[struct{}])(nil)
+	_ StructRuleViolationPrinter[struct{}] = (*structRulePrinter[struct{}])(nil)
+)
 
 type StructRuleAdder interface {
 	Add(field StructField, vs ...Validator)
 }
 
-type StructRuleValidator[T any] struct {
-	base  *T
-	rules map[string]*structFieldRuleValidator
+type structRule[T any] struct {
+	base   *T
+	fields map[string]*structFieldRuleValidator
 }
 
-func (r *StructRuleValidator[T]) Add(field StructField, vs ...Validator) {
+func (r *structRule[T]) Add(field StructField, vs ...Validator) {
 	offset := field.offsetOf(r.base)
 	f := lookupStructField(r.base, offset)
-	if r.rules == nil {
-		r.rules = make(map[string]*structFieldRuleValidator)
-	}
-	r.rules[field.Name()] = &structFieldRuleValidator{
+	r.fields[field.Name()] = &structFieldRuleValidator{
 		field: field,
 		vs:    vs,
 		index: f.Index,
@@ -51,39 +119,7 @@ func lookupStructField(p any, offset uintptr) reflect.StructField {
 	panic("the pointer refers out of the struct")
 }
 
-func (r *StructRuleValidator[T]) Validate(v any) error {
-	p := reflect.ValueOf(v)
-	if p.Kind() == reflect.Pointer {
-		p = p.Elem()
-	}
-	base := p.Interface()
-	errs := make(map[string]error)
-	for name, rule := range r.rules {
-		if err := rule.Validate(base); err != nil {
-			errs[name] = err
-		}
-	}
-	if len(errs) > 0 {
-		return &StructRuleViolationError[T]{
-			Value:  r.base,
-			Errors: errs,
-		}
-	}
-	return nil
-}
-
-type StructRuleViolationError[T any] struct {
-	Value  *T
-	Errors map[string]error
-}
-
-func (e StructRuleViolationError[T]) Error() string {
-	var w bytes.Buffer
-	for _, err := range e.Errors {
-		fmt.Fprintln(&w, err)
-	}
-	return w.String()
-}
+var _ StructRuleAdder = (*structRule[struct{}])(nil)
 
 type structFieldRuleValidator struct {
 	field StructField
@@ -122,25 +158,28 @@ func (e StructFieldRuleViolationError[T]) Error() string {
 type structFieldRulePrinter[T any] struct{}
 
 func (structFieldRulePrinter[T]) Print(w io.Writer, e StructFieldRuleViolationError[T]) {
-	errs, ok := unwrapErrors(e.Err)
+	errs, ok := e.Err.(interface{ Unwrap() []error })
 	if !ok {
+		// The structFieldRuleValidator.Validate always returns any errors
+		// with errors.Join.
 		panic("unexpected")
 	}
-	for i, err := range errs {
+	for i, err := range errs.Unwrap() {
 		if i > 0 {
 			w.Write([]byte("\n"))
 		}
-		fmt.Fprintf(w, "the field '%s' %v", e.Name, err)
+		fmt.Fprintf(w, "%s: %v", e.Name, err)
 	}
 }
 
-type StructRuleViolationPrinter[T any] interface {
-	Printer[StructRuleViolationError[T]]
+type StructFieldRuleViolationPrinter[T any] interface {
+	Printer[StructFieldRuleViolationError[T]]
 }
 
 var (
-	_ StructRuleAdder = (*StructRuleValidator[struct{}])(nil)
-	_ Validator       = (*StructRuleValidator[struct{}])(nil)
+	_ Validator                                 = (*structFieldRuleValidator)(nil)
+	_ ViolationError                            = (*StructFieldRuleViolationError[struct{}])(nil)
+	_ StructFieldRuleViolationPrinter[struct{}] = (*structFieldRulePrinter[struct{}])(nil)
 )
 
 func Field[T any](p *T, name string, opts ...any) StructField {

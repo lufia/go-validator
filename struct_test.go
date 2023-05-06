@@ -40,10 +40,9 @@ func TestStruct_reusingValidator(t *testing.T) {
 		s.Add(Field(&r.Key, "key"), stringValidator)
 	})
 	err := v.Validate(&r)
-	t.Logf("errrrrrr: %v", err)
 	testErrors[Request](t, err, []string{
-		"the field 'name' cannot be the zero value",
-		"the field 'key' cannot be the zero value",
+		"name: cannot be the zero value",
+		"key: cannot be the zero value",
 	})
 }
 

@@ -27,6 +27,6 @@ func Example() {
 	err := requestValidator.Validate(&r)
 	fmt.Println(err)
 	// Unordered output:
-	// the field 'name' cannot be the zero value
-	// the length of the field 'id' must be in range(5 ... 10)
+	// name: cannot be the zero value
+	// id: must be in range(5 ... 10)
 }
