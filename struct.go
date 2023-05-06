@@ -8,9 +8,9 @@ import (
 	"reflect"
 )
 
-func Struct[T any](build func(s StructRuleAdder, v *T)) Validator {
+func Struct[T any](build func(s StructRuleAdder, v *T)) *StructRuleValidator[T] {
 	var (
-		s structRuleValidator[T]
+		s StructRuleValidator[T]
 		v T
 	)
 	s.base = &v
@@ -22,18 +22,18 @@ type StructRuleAdder interface {
 	Add(field StructField, vs ...Validator)
 }
 
-type structRuleValidator[T any] struct {
+type StructRuleValidator[T any] struct {
 	base  *T
 	rules map[string]*structFieldRuleValidator
 }
 
-func (s *structRuleValidator[T]) Add(field StructField, vs ...Validator) {
-	offset := field.offsetOf(s.base)
-	f := lookupStructField(s.base, offset)
-	if s.rules == nil {
-		s.rules = make(map[string]*structFieldRuleValidator)
+func (r *StructRuleValidator[T]) Add(field StructField, vs ...Validator) {
+	offset := field.offsetOf(r.base)
+	f := lookupStructField(r.base, offset)
+	if r.rules == nil {
+		r.rules = make(map[string]*structFieldRuleValidator)
 	}
-	s.rules[field.Name()] = &structFieldRuleValidator{
+	r.rules[field.Name()] = &structFieldRuleValidator{
 		field: field,
 		vs:    vs,
 		index: f.Index,
@@ -51,21 +51,21 @@ func lookupStructField(p any, offset uintptr) reflect.StructField {
 	panic("the pointer refers out of the struct")
 }
 
-func (s *structRuleValidator[T]) Validate(v any) error {
+func (r *StructRuleValidator[T]) Validate(v any) error {
 	p := reflect.ValueOf(v)
 	if p.Kind() == reflect.Pointer {
 		p = p.Elem()
 	}
 	base := p.Interface()
 	errs := make(map[string]error)
-	for name, rule := range s.rules {
+	for name, rule := range r.rules {
 		if err := rule.Validate(base); err != nil {
 			errs[name] = err
 		}
 	}
 	if len(errs) > 0 {
 		return &StructRuleViolationError[T]{
-			Value:  s.base,
+			Value:  r.base,
 			Errors: errs,
 		}
 	}
@@ -110,7 +110,6 @@ type StructFieldRuleViolationError[T any] struct {
 	Name  string
 	Value T
 	Err   error
-	rule  *structRuleValidator[T]
 }
 
 func (e StructFieldRuleViolationError[T]) Error() string {
@@ -140,8 +139,8 @@ type StructRuleViolationPrinter[T any] interface {
 }
 
 var (
-	_ StructRuleAdder = (*structRuleValidator[struct{}])(nil)
-	_ Validator       = (*structRuleValidator[struct{}])(nil)
+	_ StructRuleAdder = (*StructRuleValidator[struct{}])(nil)
+	_ Validator       = (*StructRuleValidator[struct{}])(nil)
 )
 
 func Field[T any](p *T, name string, opts ...any) StructField {

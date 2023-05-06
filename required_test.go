@@ -22,10 +22,7 @@ func TestRequired(t *testing.T) {
 		testValidate(t, v, "", "cannot be the zero value")
 	})
 	t.Run("string with printer", func(t *testing.T) {
-		v := Required[string](
-			&testRequiredViolationPrinter[string]{},
-			&testInvalidTypePrinter{},
-		)
+		v := Required[string](&testInvalidTypePrinter{}).WithPrinter(&testRequiredViolationPrinter[string]{})
 		testValidate(t, v, "", "'' is empty")
 		testValidate(t, v, 0, "int(0) vs string")
 	})

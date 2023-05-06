@@ -8,16 +8,12 @@ import (
 )
 
 // Required returns the validator to verify the value is not zero value.
-// When opts contains the type RequiredViolationPrinter[T],
-// it will be used to print the required violation error.
-// Also, when opts contains the type InvalidTypePrinter,
+// When opts contains the type InvalidTypePrinter,
 // it will be used to print the invalid type error.
-func Required[T comparable](opts ...any) Validator {
-	var r requiredValidator[T]
+func Required[T comparable](opts ...any) *RequiredValidator[T] {
+	var r RequiredValidator[T]
 	for _, opt := range opts {
 		switch v := opt.(type) {
-		case RequiredViolationPrinter[T]:
-			r.p = v
 		case InvalidTypePrinter:
 			r.pp = v
 		}
@@ -25,12 +21,18 @@ func Required[T comparable](opts ...any) Validator {
 	return &r
 }
 
-type requiredValidator[T comparable] struct {
+type RequiredValidator[T comparable] struct {
 	p  RequiredViolationPrinter[T]
 	pp InvalidTypePrinter
 }
 
-func (r *requiredValidator[T]) Validate(v any) error {
+func (r *RequiredValidator[T]) WithPrinter(p RequiredViolationPrinter[T]) *RequiredValidator[T] {
+	rr := *r
+	rr.p = p
+	return &rr
+}
+
+func (r *RequiredValidator[T]) Validate(v any) error {
 	s, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
@@ -51,7 +53,7 @@ func (r *requiredValidator[T]) Validate(v any) error {
 
 type RequiredViolationError[T comparable] struct {
 	Value T
-	rule  *requiredValidator[T]
+	rule  *RequiredValidator[T]
 }
 
 func (e RequiredViolationError[T]) Error() string {
@@ -75,7 +77,7 @@ type RequiredViolationPrinter[T comparable] interface {
 }
 
 var (
-	_ Validator                        = (*requiredValidator[string])(nil)
+	_ Validator                        = (*RequiredValidator[string])(nil)
 	_ ViolationError                   = (*RequiredViolationError[string])(nil)
 	_ RequiredViolationPrinter[string] = (*requiredPrinter[string])(nil)
 )

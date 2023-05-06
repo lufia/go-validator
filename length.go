@@ -7,13 +7,11 @@ import (
 	"reflect"
 )
 
-func MinLength[T ~string](n int, opts ...any) Validator {
-	var r minLengthValidator[T]
+func MinLength[T ~string](n int, opts ...any) *MinLengthValidator[T] {
+	var r MinLengthValidator[T]
 	r.min = n
 	for _, opt := range opts {
 		switch v := opt.(type) {
-		case MinLengthViolationPrinter[T]:
-			r.p = v
 		case InvalidTypePrinter:
 			r.pp = v
 		}
@@ -21,13 +19,19 @@ func MinLength[T ~string](n int, opts ...any) Validator {
 	return &r
 }
 
-type minLengthValidator[T ~string] struct {
+type MinLengthValidator[T ~string] struct {
 	min int
 	p   MinLengthViolationPrinter[T]
 	pp  InvalidTypePrinter
 }
 
-func (r *minLengthValidator[T]) Validate(v any) error {
+func (r *MinLengthValidator[T]) WithPrinter(p MinLengthViolationPrinter[T]) *MinLengthValidator[T] {
+	rr := *r
+	rr.p = p
+	return &rr
+}
+
+func (r *MinLengthValidator[T]) Validate(v any) error {
 	s, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
@@ -50,7 +54,7 @@ func (r *minLengthValidator[T]) Validate(v any) error {
 type MinLengthViolationError[T ~string] struct {
 	Value T
 	Min   int
-	rule  *minLengthValidator[T]
+	rule  *MinLengthValidator[T]
 }
 
 func (e MinLengthViolationError[T]) Error() string {
@@ -74,18 +78,16 @@ type MinLengthViolationPrinter[T ~string] interface {
 }
 
 var (
-	_ Validator                         = (*minLengthValidator[string])(nil)
+	_ Validator                         = (*MinLengthValidator[string])(nil)
 	_ ViolationError                    = (*MinLengthViolationError[string])(nil)
 	_ MinLengthViolationPrinter[string] = (*minLengthPrinter[string])(nil)
 )
 
-func MaxLength[T ~string](n int, opts ...any) Validator {
-	var r maxLengthValidator[T]
+func MaxLength[T ~string](n int, opts ...any) *MaxLengthValidator[T] {
+	var r MaxLengthValidator[T]
 	r.max = n
 	for _, opt := range opts {
 		switch v := opt.(type) {
-		case MaxLengthViolationPrinter[T]:
-			r.p = v
 		case InvalidTypePrinter:
 			r.pp = v
 		}
@@ -93,13 +95,19 @@ func MaxLength[T ~string](n int, opts ...any) Validator {
 	return &r
 }
 
-type maxLengthValidator[T ~string] struct {
+type MaxLengthValidator[T ~string] struct {
 	max int
 	p   MaxLengthViolationPrinter[T]
 	pp  InvalidTypePrinter
 }
 
-func (r *maxLengthValidator[T]) Validate(v any) error {
+func (r *MaxLengthValidator[T]) WithPrinter(p MaxLengthViolationPrinter[T]) *MaxLengthValidator[T] {
+	rr := *r
+	rr.p = p
+	return &rr
+}
+
+func (r *MaxLengthValidator[T]) Validate(v any) error {
 	s, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
@@ -122,7 +130,7 @@ func (r *maxLengthValidator[T]) Validate(v any) error {
 type MaxLengthViolationError[T ~string] struct {
 	Value T
 	Max   int
-	rule  *maxLengthValidator[T]
+	rule  *MaxLengthValidator[T]
 }
 
 func (e MaxLengthViolationError[T]) Error() string {
@@ -146,19 +154,17 @@ type MaxLengthViolationPrinter[T ~string] interface {
 }
 
 var (
-	_ Validator                         = (*maxLengthValidator[string])(nil)
+	_ Validator                         = (*MaxLengthValidator[string])(nil)
 	_ ViolationError                    = (*MaxLengthViolationError[string])(nil)
 	_ MaxLengthViolationPrinter[string] = (*maxLengthPrinter[string])(nil)
 )
 
-func Length[T ~string](min, max int, opts ...any) Validator {
-	var r lengthValidator[T]
+func Length[T ~string](min, max int, opts ...any) *LengthValidator[T] {
+	var r LengthValidator[T]
 	r.min = min
 	r.max = max
 	for _, opt := range opts {
 		switch v := opt.(type) {
-		case LengthViolationPrinter[T]:
-			r.p = v
 		case InvalidTypePrinter:
 			r.pp = v
 		}
@@ -166,13 +172,19 @@ func Length[T ~string](min, max int, opts ...any) Validator {
 	return &r
 }
 
-type lengthValidator[T ~string] struct {
+type LengthValidator[T ~string] struct {
 	min, max int
 	p        LengthViolationPrinter[T]
 	pp       InvalidTypePrinter
 }
 
-func (r *lengthValidator[T]) Validate(v any) error {
+func (r *LengthValidator[T]) WithPrinter(p LengthViolationPrinter[T]) *LengthValidator[T] {
+	rr := *r
+	rr.p = p
+	return &rr
+}
+
+func (r *LengthValidator[T]) Validate(v any) error {
 	s, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
@@ -196,7 +208,7 @@ func (r *lengthValidator[T]) Validate(v any) error {
 type LengthViolationError[T ~string] struct {
 	Value    T
 	Min, Max int
-	rule     *lengthValidator[T]
+	rule     *LengthValidator[T]
 }
 
 func (e LengthViolationError[T]) Error() string {
@@ -220,7 +232,7 @@ type LengthViolationPrinter[T ~string] interface {
 }
 
 var (
-	_ Validator                      = (*lengthValidator[string])(nil)
+	_ Validator                      = (*LengthValidator[string])(nil)
 	_ ViolationError                 = (*LengthViolationError[string])(nil)
 	_ LengthViolationPrinter[string] = (*lengthPrinter[string])(nil)
 )

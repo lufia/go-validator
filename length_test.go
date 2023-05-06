@@ -38,10 +38,7 @@ func TestMinLength(t *testing.T) {
 		testValidate(t, v, "ab", "the length must be no less than 3")
 	})
 	t.Run("custom printer", func(t *testing.T) {
-		v := MinLength[string](3,
-			&testMinLengthViolationPrinter[string]{},
-			&testInvalidTypePrinter{},
-		)
+		v := MinLength[string](3, &testInvalidTypePrinter{}).WithPrinter(&testMinLengthViolationPrinter[string]{})
 		testValidate(t, v, "ab", "'ab' is less than 3")
 		testValidate(t, v, 123, "int(123) vs string")
 	})
@@ -55,10 +52,7 @@ func TestMaxLength(t *testing.T) {
 		testValidate(t, v, "1234", "the length must be no greater than 3")
 	})
 	t.Run("custom printer", func(t *testing.T) {
-		v := MaxLength[string](3,
-			&testMaxLengthViolationPrinter[string]{},
-			&testInvalidTypePrinter{},
-		)
+		v := MaxLength[string](3, &testInvalidTypePrinter{}).WithPrinter(&testMaxLengthViolationPrinter[string]{})
 		testValidate(t, v, "1234", "'1234' is greater than 3")
 		testValidate(t, v, 123, "int(123) vs string")
 	})
@@ -73,10 +67,7 @@ func TestLength(t *testing.T) {
 		testValidate(t, v, "1234", "the length must be in range(1 ... 3)")
 	})
 	t.Run("custom printer", func(t *testing.T) {
-		v := Length[string](1, 3,
-			&testLengthViolationPrinter[string]{},
-			&testInvalidTypePrinter{},
-		)
+		v := Length[string](1, 3, &testInvalidTypePrinter{}).WithPrinter(&testLengthViolationPrinter[string]{})
 		testValidate(t, v, "1234", "'1234' is out of range(1, 3)")
 		testValidate(t, v, 3, "int(3) vs string")
 	})

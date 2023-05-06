@@ -13,13 +13,11 @@ type ordered interface {
 	constraints.Ordered
 }
 
-func Min[T ordered](n T, opts ...any) Validator {
-	var r minValidator[T]
+func Min[T ordered](n T, opts ...any) *MinValidator[T] {
+	var r MinValidator[T]
 	r.min = n
 	for _, opt := range opts {
 		switch v := opt.(type) {
-		case MinViolationPrinter[T]:
-			r.p = v
 		case InvalidTypePrinter:
 			r.pp = v
 		}
@@ -27,13 +25,19 @@ func Min[T ordered](n T, opts ...any) Validator {
 	return &r
 }
 
-type minValidator[T ordered] struct {
+type MinValidator[T ordered] struct {
 	min T
 	p   MinViolationPrinter[T]
 	pp  InvalidTypePrinter
 }
 
-func (r *minValidator[T]) Validate(v any) error {
+func (r *MinValidator[T]) WithPrinter(p MinViolationPrinter[T]) *MinValidator[T] {
+	rr := *r
+	rr.p = p
+	return &rr
+}
+
+func (r *MinValidator[T]) Validate(v any) error {
 	n, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
@@ -55,7 +59,7 @@ func (r *minValidator[T]) Validate(v any) error {
 type MinViolationError[T ordered] struct {
 	Value T
 	Min   T
-	rule  *minValidator[T]
+	rule  *MinValidator[T]
 }
 
 func (e MinViolationError[T]) Error() string {
@@ -79,18 +83,16 @@ type MinViolationPrinter[T ordered] interface {
 }
 
 var (
-	_ Validator                = (*minValidator[int])(nil)
+	_ Validator                = (*MinValidator[int])(nil)
 	_ ViolationError           = (*MinViolationError[int])(nil)
 	_ MinViolationPrinter[int] = (*minPrinter[int])(nil)
 )
 
-func Max[T ordered](n T, opts ...any) Validator {
-	var r maxValidator[T]
+func Max[T ordered](n T, opts ...any) *MaxValidator[T] {
+	var r MaxValidator[T]
 	r.max = n
 	for _, opt := range opts {
 		switch v := opt.(type) {
-		case MaxViolationPrinter[T]:
-			r.p = v
 		case InvalidTypePrinter:
 			r.pp = v
 		}
@@ -98,13 +100,19 @@ func Max[T ordered](n T, opts ...any) Validator {
 	return &r
 }
 
-type maxValidator[T ordered] struct {
+type MaxValidator[T ordered] struct {
 	max T
 	p   MaxViolationPrinter[T]
 	pp  InvalidTypePrinter
 }
 
-func (r *maxValidator[T]) Validate(v any) error {
+func (r *MaxValidator[T]) WithPrinter(p MaxViolationPrinter[T]) *MaxValidator[T] {
+	rr := *r
+	rr.p = p
+	return &rr
+}
+
+func (r *MaxValidator[T]) Validate(v any) error {
 	n, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
@@ -126,7 +134,7 @@ func (r *maxValidator[T]) Validate(v any) error {
 type MaxViolationError[T ordered] struct {
 	Value T
 	Max   T
-	rule  *maxValidator[T]
+	rule  *MaxValidator[T]
 }
 
 func (e MaxViolationError[T]) Error() string {
@@ -150,19 +158,17 @@ type MaxViolationPrinter[T ordered] interface {
 }
 
 var (
-	_ Validator                = (*maxValidator[int])(nil)
+	_ Validator                = (*MaxValidator[int])(nil)
 	_ ViolationError           = (*MaxViolationError[int])(nil)
 	_ MaxViolationPrinter[int] = (*maxPrinter[int])(nil)
 )
 
-func InRange[T ordered](min, max T, opts ...any) Validator {
-	var r inRangeValidator[T]
+func InRange[T ordered](min, max T, opts ...any) *InRangeValidator[T] {
+	var r InRangeValidator[T]
 	r.min = min
 	r.max = max
 	for _, opt := range opts {
 		switch v := opt.(type) {
-		case InRangeViolationPrinter[T]:
-			r.p = v
 		case InvalidTypePrinter:
 			r.pp = v
 		}
@@ -170,13 +176,19 @@ func InRange[T ordered](min, max T, opts ...any) Validator {
 	return &r
 }
 
-type inRangeValidator[T ordered] struct {
+type InRangeValidator[T ordered] struct {
 	min, max T
 	p        InRangeViolationPrinter[T]
 	pp       InvalidTypePrinter
 }
 
-func (r *inRangeValidator[T]) Validate(v any) error {
+func (r *InRangeValidator[T]) WithPrinter(p InRangeViolationPrinter[T]) *InRangeValidator[T] {
+	rr := *r
+	rr.p = p
+	return &rr
+}
+
+func (r *InRangeValidator[T]) Validate(v any) error {
 	n, ok := v.(T)
 	if !ok {
 		return &InvalidTypeError{
@@ -199,7 +211,7 @@ func (r *inRangeValidator[T]) Validate(v any) error {
 type InRangeViolationError[T ordered] struct {
 	Value    T
 	Min, Max T
-	rule     *inRangeValidator[T]
+	rule     *InRangeValidator[T]
 }
 
 func (e InRangeViolationError[T]) Error() string {
@@ -223,7 +235,7 @@ type InRangeViolationPrinter[T ordered] interface {
 }
 
 var (
-	_ Validator                    = (*inRangeValidator[int])(nil)
+	_ Validator                    = (*InRangeValidator[int])(nil)
 	_ ViolationError               = (*InRangeViolationError[int])(nil)
 	_ InRangeViolationPrinter[int] = (*inRangePrinter[int])(nil)
 )

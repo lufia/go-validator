@@ -38,10 +38,7 @@ func TestMin(t *testing.T) {
 		testValidate(t, v, 2, "must be no less than 3")
 	})
 	t.Run("int with printer", func(t *testing.T) {
-		v := Min(3,
-			&testMinViolationPrinter[int]{},
-			&testInvalidTypePrinter{},
-		)
+		v := Min(3, &testInvalidTypePrinter{}).WithPrinter(&testMinViolationPrinter[int]{})
 		testValidate(t, v, 2, "'2' is less than 3")
 		testValidate(t, v, 3.0, "float64(3) vs int")
 	})
@@ -55,10 +52,7 @@ func TestMax(t *testing.T) {
 		testValidate(t, v, 4, "must be no greater than 3")
 	})
 	t.Run("int with printer", func(t *testing.T) {
-		v := Max(3,
-			&testMaxViolationPrinter[int]{},
-			&testInvalidTypePrinter{},
-		)
+		v := Max(3, &testInvalidTypePrinter{}).WithPrinter(&testMaxViolationPrinter[int]{})
 		testValidate(t, v, 4, "'4' is greater than 3")
 		testValidate(t, v, 3.0, "float64(3) vs int")
 	})
@@ -73,10 +67,7 @@ func TestInRange(t *testing.T) {
 		testValidate(t, v, 4, "must be in range(1 ... 3)")
 	})
 	t.Run("int with printer", func(t *testing.T) {
-		v := InRange(1, 3,
-			&testInRangeViolationPrinter[int]{},
-			&testInvalidTypePrinter{},
-		)
+		v := InRange(1, 3, &testInvalidTypePrinter{}).WithPrinter(&testInRangeViolationPrinter[int]{})
 		testValidate(t, v, 4, "'4' is out of range(1, 3)")
 		testValidate(t, v, 3.0, "float64(3) vs int")
 	})
