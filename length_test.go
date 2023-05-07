@@ -23,9 +23,8 @@ func (testMinLengthViolationPrinter[T]) Print(w io.Writer, e *MinLengthViolation
 
 func TestMinLengthWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := MinLength[string](3, &testInvalidTypePrinter{}).WithPrinter(&testMinLengthViolationPrinter[string]{})
+		v := MinLength[string](3).WithPrinter(&testMinLengthViolationPrinter[string]{})
 		testValidate(t, v, "ab", "'ab' is less than 3")
-		testValidate(t, v, 123, "int(123) vs string")
 	})
 	t.Run("printerfunc", func(t *testing.T) {
 		v := MinLength[string](3).WithPrinterFunc(func(w io.Writer, min int) {
@@ -52,9 +51,8 @@ func (testMaxLengthViolationPrinter[T]) Print(w io.Writer, e *MaxLengthViolation
 
 func TestMaxLengthWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := MaxLength[string](3, &testInvalidTypePrinter{}).WithPrinter(&testMaxLengthViolationPrinter[string]{})
+		v := MaxLength[string](3).WithPrinter(&testMaxLengthViolationPrinter[string]{})
 		testValidate(t, v, "1234", "'1234' is greater than 3")
-		testValidate(t, v, 123, "int(123) vs string")
 	})
 	t.Run("printerfunc", func(t *testing.T) {
 		v := MaxLength[string](3).WithPrinterFunc(func(w io.Writer, max int) {
@@ -82,9 +80,8 @@ func (testLengthViolationPrinter[T]) Print(w io.Writer, e *LengthViolationError[
 
 func TestLengthWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := Length[string](1, 3, &testInvalidTypePrinter{}).WithPrinter(&testLengthViolationPrinter[string]{})
+		v := Length[string](1, 3).WithPrinter(&testLengthViolationPrinter[string]{})
 		testValidate(t, v, "1234", "'1234' is out of range(1, 3)")
-		testValidate(t, v, 3, "int(3) vs string")
 	})
 	t.Run("printerfunc", func(t *testing.T) {
 		v := Length[string](1, 3).WithPrinterFunc(func(w io.Writer, min, max int) {

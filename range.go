@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"reflect"
 
 	"golang.org/x/exp/constraints"
 )
@@ -13,22 +12,15 @@ type ordered interface {
 	constraints.Ordered
 }
 
-func Min[T ordered](n T, opts ...any) *MinValidator[T] {
+func Min[T ordered](n T) *MinValidator[T] {
 	var r MinValidator[T]
 	r.min = n
-	for _, opt := range opts {
-		switch v := opt.(type) {
-		case InvalidTypePrinter:
-			r.pp = v
-		}
-	}
 	return &r
 }
 
 type MinValidator[T ordered] struct {
 	min T
 	p   MinViolationPrinter[T]
-	pp  InvalidTypePrinter
 }
 
 func (r *MinValidator[T]) WithPrinter(p MinViolationPrinter[T]) *MinValidator[T] {
@@ -46,14 +38,7 @@ func (r *MinValidator[T]) WithPrinterFunc(fn func(w io.Writer, min T)) *MinValid
 }
 
 func (r *MinValidator[T]) Validate(v any) error {
-	n, ok := v.(T)
-	if !ok {
-		return &InvalidTypeError{
-			Value: v,
-			Type:  reflect.TypeOf(n),
-			p:     r.pp,
-		}
-	}
+	n := v.(T)
 	if n < r.min {
 		return &MinViolationError[T]{
 			Value: n,
@@ -96,22 +81,15 @@ var _ typedValidator[
 	MinViolationPrinter[int],
 ] = (*MinValidator[int])(nil)
 
-func Max[T ordered](n T, opts ...any) *MaxValidator[T] {
+func Max[T ordered](n T) *MaxValidator[T] {
 	var r MaxValidator[T]
 	r.max = n
-	for _, opt := range opts {
-		switch v := opt.(type) {
-		case InvalidTypePrinter:
-			r.pp = v
-		}
-	}
 	return &r
 }
 
 type MaxValidator[T ordered] struct {
 	max T
 	p   MaxViolationPrinter[T]
-	pp  InvalidTypePrinter
 }
 
 func (r *MaxValidator[T]) WithPrinter(p MaxViolationPrinter[T]) *MaxValidator[T] {
@@ -129,14 +107,7 @@ func (r *MaxValidator[T]) WithPrinterFunc(fn func(w io.Writer, max T)) *MaxValid
 }
 
 func (r *MaxValidator[T]) Validate(v any) error {
-	n, ok := v.(T)
-	if !ok {
-		return &InvalidTypeError{
-			Value: v,
-			Type:  reflect.TypeOf(n),
-			p:     r.pp,
-		}
-	}
+	n := v.(T)
 	if n > r.max {
 		return &MaxViolationError[T]{
 			Value: n,
@@ -179,23 +150,16 @@ var _ typedValidator[
 	MaxViolationPrinter[int],
 ] = (*MaxValidator[int])(nil)
 
-func InRange[T ordered](min, max T, opts ...any) *InRangeValidator[T] {
+func InRange[T ordered](min, max T) *InRangeValidator[T] {
 	var r InRangeValidator[T]
 	r.min = min
 	r.max = max
-	for _, opt := range opts {
-		switch v := opt.(type) {
-		case InvalidTypePrinter:
-			r.pp = v
-		}
-	}
 	return &r
 }
 
 type InRangeValidator[T ordered] struct {
 	min, max T
 	p        InRangeViolationPrinter[T]
-	pp       InvalidTypePrinter
 }
 
 func (r *InRangeValidator[T]) WithPrinter(p InRangeViolationPrinter[T]) *InRangeValidator[T] {
@@ -213,14 +177,7 @@ func (r *InRangeValidator[T]) WithPrinterFunc(fn func(w io.Writer, min, max T)) 
 }
 
 func (r *InRangeValidator[T]) Validate(v any) error {
-	n, ok := v.(T)
-	if !ok {
-		return &InvalidTypeError{
-			Value: v,
-			Type:  reflect.TypeOf(n),
-			p:     r.pp,
-		}
-	}
+	n := v.(T)
 	if n < r.min || n > r.max {
 		return &InRangeViolationError[T]{
 			Value: n,

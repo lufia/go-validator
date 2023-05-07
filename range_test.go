@@ -23,9 +23,8 @@ func (testMinViolationPrinter[T]) Print(w io.Writer, e *MinViolationError[T]) {
 
 func TestMinWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := Min(3, &testInvalidTypePrinter{}).WithPrinter(&testMinViolationPrinter[int]{})
+		v := Min(3).WithPrinter(&testMinViolationPrinter[int]{})
 		testValidate(t, v, 2, "'2' is less than 3")
-		testValidate(t, v, 3.0, "float64(3) vs int")
 	})
 	t.Run("printerfunc", func(t *testing.T) {
 		v := Min(3).WithPrinterFunc(func(w io.Writer, min int) {
@@ -52,9 +51,8 @@ func (testMaxViolationPrinter[T]) Print(w io.Writer, e *MaxViolationError[T]) {
 
 func TestMaxWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := Max(3, &testInvalidTypePrinter{}).WithPrinter(&testMaxViolationPrinter[int]{})
+		v := Max(3).WithPrinter(&testMaxViolationPrinter[int]{})
 		testValidate(t, v, 4, "'4' is greater than 3")
-		testValidate(t, v, 3.0, "float64(3) vs int")
 	})
 	t.Run("printerfunc", func(t *testing.T) {
 		v := Max(3).WithPrinterFunc(func(w io.Writer, max int) {
@@ -82,9 +80,8 @@ func (testInRangeViolationPrinter[T]) Print(w io.Writer, e *InRangeViolationErro
 
 func TestInRangeWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := InRange(1, 3, &testInvalidTypePrinter{}).WithPrinter(&testInRangeViolationPrinter[int]{})
+		v := InRange(1, 3).WithPrinter(&testInRangeViolationPrinter[int]{})
 		testValidate(t, v, 4, "'4' is out of range(1, 3)")
-		testValidate(t, v, 3.0, "float64(3) vs int")
 	})
 	t.Run("printerfunc", func(t *testing.T) {
 		v := InRange(1, 3).WithPrinterFunc(func(w io.Writer, min, max int) {

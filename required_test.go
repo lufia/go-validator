@@ -28,9 +28,8 @@ func (testRequiredViolationPrinter[T]) Print(w io.Writer, e *RequiredViolationEr
 
 func TestRequiredWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := Required[string](&testInvalidTypePrinter{}).WithPrinter(&testRequiredViolationPrinter[string]{})
+		v := Required[string]().WithPrinter(&testRequiredViolationPrinter[string]{})
 		testValidate(t, v, "", "'' is empty")
-		testValidate(t, v, 0, "int(0) vs string")
 	})
 	t.Run("printerfunc", func(t *testing.T) {
 		v := Required[string]().WithPrinterFunc(func(w io.Writer) {

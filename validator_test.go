@@ -1,18 +1,8 @@
 package validator
 
 import (
-	"fmt"
-	"io"
 	"testing"
 )
-
-type testInvalidTypePrinter struct{}
-
-func (testInvalidTypePrinter) Print(w io.Writer, e *InvalidTypeError) {
-	fmt.Fprintf(w, "%[1]T(%[1]v) vs %[2]v", e.Value, e.Type)
-}
-
-var _ InvalidTypePrinter = (*testInvalidTypePrinter)(nil)
 
 func testValidate(t *testing.T, v Validator, p any, e string) {
 	t.Helper()

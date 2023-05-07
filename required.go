@@ -4,26 +4,17 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"reflect"
 )
 
 // Required returns the validator to verify the value is not zero value.
 // When opts contains the type InvalidTypePrinter,
 // it will be used to print the invalid type error.
-func Required[T comparable](opts ...any) *RequiredValidator[T] {
-	var r RequiredValidator[T]
-	for _, opt := range opts {
-		switch v := opt.(type) {
-		case InvalidTypePrinter:
-			r.pp = v
-		}
-	}
-	return &r
+func Required[T comparable]() *RequiredValidator[T] {
+	return &RequiredValidator[T]{}
 }
 
 type RequiredValidator[T comparable] struct {
-	p  RequiredViolationPrinter[T]
-	pp InvalidTypePrinter
+	p RequiredViolationPrinter[T]
 }
 
 func (r *RequiredValidator[T]) WithPrinter(p RequiredViolationPrinter[T]) *RequiredValidator[T] {
@@ -41,14 +32,7 @@ func (r *RequiredValidator[T]) WithPrinterFunc(fn func(w io.Writer)) *RequiredVa
 }
 
 func (r *RequiredValidator[T]) Validate(v any) error {
-	s, ok := v.(T)
-	if !ok {
-		return &InvalidTypeError{
-			Value: v,
-			Type:  reflect.TypeOf(s),
-			p:     r.pp,
-		}
-	}
+	s := v.(T)
 	var v0 T
 	if s == v0 {
 		return &RequiredViolationError[T]{
