@@ -37,6 +37,14 @@ func (r *MinValidator[T]) WithPrinter(p MinViolationPrinter[T]) *MinValidator[T]
 	return &rr
 }
 
+func (r *MinValidator[T]) WithPrinterFunc(fn func(w io.Writer, min T)) *MinValidator[T] {
+	rr := *r
+	rr.p = printerFunc(func(w io.Writer, e *MinViolationError[T]) {
+		fn(w, e.Min)
+	})
+	return &rr
+}
+
 func (r *MinValidator[T]) Validate(v any) error {
 	n, ok := v.(T)
 	if !ok {
@@ -65,16 +73,16 @@ type MinViolationError[T ordered] struct {
 func (e MinViolationError[T]) Error() string {
 	p := e.rule.p
 	if p == nil {
-		p = &minPrinter[T]{}
+		p = &minViolationPrinter[T]{}
 	}
 	var w bytes.Buffer
-	p.Print(&w, e)
+	p.Print(&w, &e)
 	return w.String()
 }
 
-type minPrinter[T ordered] struct{}
+type minViolationPrinter[T ordered] struct{}
 
-func (minPrinter[T]) Print(w io.Writer, e MinViolationError[T]) {
+func (minViolationPrinter[T]) Print(w io.Writer, e *MinViolationError[T]) {
 	fmt.Fprintf(w, "must be no less than %v", e.Min)
 }
 
@@ -82,11 +90,11 @@ type MinViolationPrinter[T ordered] interface {
 	Printer[MinViolationError[T]]
 }
 
-var (
-	_ Validator                = (*MinValidator[int])(nil)
-	_ ViolationError           = (*MinViolationError[int])(nil)
-	_ MinViolationPrinter[int] = (*minPrinter[int])(nil)
-)
+var _ typedValidator[
+	*MinValidator[int],
+	MinViolationError[int],
+	MinViolationPrinter[int],
+] = (*MinValidator[int])(nil)
 
 func Max[T ordered](n T, opts ...any) *MaxValidator[T] {
 	var r MaxValidator[T]
@@ -109,6 +117,14 @@ type MaxValidator[T ordered] struct {
 func (r *MaxValidator[T]) WithPrinter(p MaxViolationPrinter[T]) *MaxValidator[T] {
 	rr := *r
 	rr.p = p
+	return &rr
+}
+
+func (r *MaxValidator[T]) WithPrinterFunc(fn func(w io.Writer, max T)) *MaxValidator[T] {
+	rr := *r
+	rr.p = printerFunc(func(w io.Writer, e *MaxViolationError[T]) {
+		fn(w, e.Max)
+	})
 	return &rr
 }
 
@@ -140,16 +156,16 @@ type MaxViolationError[T ordered] struct {
 func (e MaxViolationError[T]) Error() string {
 	p := e.rule.p
 	if p == nil {
-		p = &maxPrinter[T]{}
+		p = &maxViolationPrinter[T]{}
 	}
 	var w bytes.Buffer
-	p.Print(&w, e)
+	p.Print(&w, &e)
 	return w.String()
 }
 
-type maxPrinter[T ordered] struct{}
+type maxViolationPrinter[T ordered] struct{}
 
-func (maxPrinter[T]) Print(w io.Writer, e MaxViolationError[T]) {
+func (maxViolationPrinter[T]) Print(w io.Writer, e *MaxViolationError[T]) {
 	fmt.Fprintf(w, "must be no greater than %v", e.Max)
 }
 
@@ -157,11 +173,11 @@ type MaxViolationPrinter[T ordered] interface {
 	Printer[MaxViolationError[T]]
 }
 
-var (
-	_ Validator                = (*MaxValidator[int])(nil)
-	_ ViolationError           = (*MaxViolationError[int])(nil)
-	_ MaxViolationPrinter[int] = (*maxPrinter[int])(nil)
-)
+var _ typedValidator[
+	*MaxValidator[int],
+	MaxViolationError[int],
+	MaxViolationPrinter[int],
+] = (*MaxValidator[int])(nil)
 
 func InRange[T ordered](min, max T, opts ...any) *InRangeValidator[T] {
 	var r InRangeValidator[T]
@@ -185,6 +201,14 @@ type InRangeValidator[T ordered] struct {
 func (r *InRangeValidator[T]) WithPrinter(p InRangeViolationPrinter[T]) *InRangeValidator[T] {
 	rr := *r
 	rr.p = p
+	return &rr
+}
+
+func (r *InRangeValidator[T]) WithPrinterFunc(fn func(w io.Writer, min, max T)) *InRangeValidator[T] {
+	rr := *r
+	rr.p = printerFunc(func(w io.Writer, e *InRangeViolationError[T]) {
+		fn(w, e.Min, e.Max)
+	})
 	return &rr
 }
 
@@ -217,16 +241,16 @@ type InRangeViolationError[T ordered] struct {
 func (e InRangeViolationError[T]) Error() string {
 	p := e.rule.p
 	if p == nil {
-		p = &inRangePrinter[T]{}
+		p = &inRangeViolationPrinter[T]{}
 	}
 	var w bytes.Buffer
-	p.Print(&w, e)
+	p.Print(&w, &e)
 	return w.String()
 }
 
-type inRangePrinter[T ordered] struct{}
+type inRangeViolationPrinter[T ordered] struct{}
 
-func (inRangePrinter[T]) Print(w io.Writer, e InRangeViolationError[T]) {
+func (inRangeViolationPrinter[T]) Print(w io.Writer, e *InRangeViolationError[T]) {
 	fmt.Fprintf(w, "must be in range(%v ... %v)", e.Min, e.Max)
 }
 
@@ -234,8 +258,8 @@ type InRangeViolationPrinter[T ordered] interface {
 	Printer[InRangeViolationError[T]]
 }
 
-var (
-	_ Validator                    = (*InRangeValidator[int])(nil)
-	_ ViolationError               = (*InRangeViolationError[int])(nil)
-	_ InRangeViolationPrinter[int] = (*inRangePrinter[int])(nil)
-)
+var _ typedValidator[
+	*InRangeValidator[int],
+	InRangeViolationError[int],
+	InRangeViolationPrinter[int],
+] = (*InRangeValidator[int])(nil)

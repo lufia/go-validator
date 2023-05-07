@@ -8,7 +8,7 @@ import (
 
 type testInvalidTypePrinter struct{}
 
-func (testInvalidTypePrinter) Print(w io.Writer, e InvalidTypeError) {
+func (testInvalidTypePrinter) Print(w io.Writer, e *InvalidTypeError) {
 	fmt.Fprintf(w, "%[1]T(%[1]v) vs %[2]v", e.Value, e.Type)
 }
 
@@ -38,7 +38,7 @@ func TestJoin(t *testing.T) {
 		"none":   {0, nil},
 		"simple": {1, []Validator{Min(1)}},
 		"multi":  {2, []Validator{Min(1), Max(10)}},
-		"nested": {3, []Validator{Required[int](), Join(Min(10), Max(20))}},
+		"nested": {3, []Validator{Required[int](), Join(Min(1), Max(10))}},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -46,6 +46,30 @@ func TestJoin(t *testing.T) {
 			if n := len(v.vs); n != tt.num {
 				t.Errorf("got %d; want %d", n, tt.num)
 			}
+			if err := v.Validate(2); err != nil {
+				t.Errorf("Validate(2) = %v; want <nil>", err)
+			}
 		})
 	}
+}
+
+func TestJoinValidator_Validate(t *testing.T) {
+	v := Join(
+		Required[string](),
+		MinLength[string](1),
+	)
+	t.Run("passed", func(t *testing.T) {
+		s := "a"
+		err := v.Validate(s)
+		if err != nil {
+			t.Errorf("Validate(%q) = %v", s, err)
+		}
+	})
+	t.Run("error", func(t *testing.T) {
+		s := ""
+		err := v.Validate(s)
+		if err == nil {
+			t.Errorf("Validate(%q) should return an error", s)
+		}
+	})
 }

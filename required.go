@@ -32,6 +32,14 @@ func (r *RequiredValidator[T]) WithPrinter(p RequiredViolationPrinter[T]) *Requi
 	return &rr
 }
 
+func (r *RequiredValidator[T]) WithPrinterFunc(fn func(w io.Writer)) *RequiredValidator[T] {
+	rr := *r
+	rr.p = printerFunc(func(w io.Writer, _ *RequiredViolationError[T]) {
+		fn(w)
+	})
+	return &rr
+}
+
 func (r *RequiredValidator[T]) Validate(v any) error {
 	s, ok := v.(T)
 	if !ok {
@@ -62,13 +70,13 @@ func (e RequiredViolationError[T]) Error() string {
 		p = &requiredPrinter[T]{}
 	}
 	var w bytes.Buffer
-	p.Print(&w, e)
+	p.Print(&w, &e)
 	return w.String()
 }
 
 type requiredPrinter[T comparable] struct{}
 
-func (requiredPrinter[T]) Print(w io.Writer, e RequiredViolationError[T]) {
+func (requiredPrinter[T]) Print(w io.Writer, e *RequiredViolationError[T]) {
 	fmt.Fprintf(w, "cannot be the zero value")
 }
 
@@ -76,8 +84,8 @@ type RequiredViolationPrinter[T comparable] interface {
 	Printer[RequiredViolationError[T]]
 }
 
-var (
-	_ Validator                        = (*RequiredValidator[string])(nil)
-	_ ViolationError                   = (*RequiredViolationError[string])(nil)
-	_ RequiredViolationPrinter[string] = (*requiredPrinter[string])(nil)
-)
+var _ typedValidator[
+	*RequiredValidator[string],
+	RequiredViolationError[string],
+	RequiredViolationPrinter[string],
+] = (*RequiredValidator[string])(nil)

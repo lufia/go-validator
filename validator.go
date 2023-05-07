@@ -9,17 +9,30 @@ import (
 	"reflect"
 )
 
+// Validator is the interface that wraps the basic Validate method.
+type Validator interface {
+	Validate(v any) error
+}
+
 type ViolationError interface {
 	error
 }
 
 type Printer[E ViolationError] interface {
-	Print(w io.Writer, e E)
+	Print(w io.Writer, e *E)
 }
 
-type Validator interface {
-	Validate(v any) error
+type PrinterFunc[E ViolationError] func(w io.Writer, e *E)
+
+func printerFunc[E ViolationError](fn func(w io.Writer, e *E)) PrinterFunc[E] {
+	return PrinterFunc[E](fn)
 }
+
+func (p PrinterFunc[E]) Print(w io.Writer, e *E) {
+	p(w, e)
+}
+
+var _ Printer[RequiredViolationError[string]] = (PrinterFunc[RequiredViolationError[string]])(nil)
 
 func Join(vs ...Validator) Validator {
 	var a []Validator
@@ -47,6 +60,8 @@ func (r *joinValidator) Validate(v any) error {
 	return errors.Join(errs...)
 }
 
+var _ Validator = (*joinValidator)(nil)
+
 type InvalidTypeError struct {
 	Value any          // passed value
 	Type  reflect.Type // expected type
@@ -60,13 +75,13 @@ func (e InvalidTypeError) Error() string {
 		p = &invalidTypePrinter{}
 	}
 	var w bytes.Buffer
-	p.Print(&w, e)
+	p.Print(&w, &e)
 	return w.String()
 }
 
 type invalidTypePrinter struct{}
 
-func (invalidTypePrinter) Print(w io.Writer, e InvalidTypeError) {
+func (invalidTypePrinter) Print(w io.Writer, e *InvalidTypeError) {
 	fmt.Fprintf(w, "the value %v is %T, not %v", e.Value, e.Value, e.Type)
 }
 
@@ -78,3 +93,8 @@ var (
 	_ ViolationError     = (*InvalidTypeError)(nil)
 	_ InvalidTypePrinter = (*invalidTypePrinter)(nil)
 )
+
+type typedValidator[V Validator, E ViolationError, P Printer[E]] interface {
+	Validator
+	WithPrinter(p P) V
+}

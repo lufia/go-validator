@@ -64,10 +64,10 @@ type StructRuleViolationError[T any] struct {
 func (e StructRuleViolationError[T]) Error() string {
 	p := e.rule.p
 	if p == nil {
-		p = &structRulePrinter[T]{}
+		p = &structRuleViolationPrinter[T]{}
 	}
 	var w bytes.Buffer
-	p.Print(&w, e)
+	p.Print(&w, &e)
 	return w.String()
 }
 
@@ -82,9 +82,9 @@ func (e StructRuleViolationError[T]) Unwrap() []error {
 	return errs
 }
 
-type structRulePrinter[T any] struct{}
+type structRuleViolationPrinter[T any] struct{}
 
-func (structRulePrinter[T]) Print(w io.Writer, e StructRuleViolationError[T]) {
+func (structRuleViolationPrinter[T]) Print(w io.Writer, e *StructRuleViolationError[T]) {
 	for _, err := range e.Errors {
 		fmt.Fprintln(w, err)
 	}
@@ -94,11 +94,11 @@ type StructRuleViolationPrinter[T any] interface {
 	Printer[StructRuleViolationError[T]]
 }
 
-var (
-	_ Validator                       = (*StructRuleValidator[any])(nil)
-	_ ViolationError                  = (*StructRuleViolationError[any])(nil)
-	_ StructRuleViolationPrinter[any] = (*structRulePrinter[any])(nil)
-)
+var _ typedValidator[
+	*StructRuleValidator[any],
+	StructRuleViolationError[any],
+	StructRuleViolationPrinter[any],
+] = (*StructRuleValidator[any])(nil)
 
 type StructRuleAdder interface {
 	Add(field StructField, vs ...Validator)
@@ -160,15 +160,15 @@ type StructFieldRuleViolationError[T any] struct {
 }
 
 func (e StructFieldRuleViolationError[T]) Error() string {
-	p := &structFieldRulePrinter[T]{}
+	p := &structFieldRuleViolationPrinter[T]{}
 	var w bytes.Buffer
-	p.Print(&w, e)
+	p.Print(&w, &e)
 	return w.String()
 }
 
-type structFieldRulePrinter[T any] struct{}
+type structFieldRuleViolationPrinter[T any] struct{}
 
-func (structFieldRulePrinter[T]) Print(w io.Writer, e StructFieldRuleViolationError[T]) {
+func (structFieldRuleViolationPrinter[T]) Print(w io.Writer, e *StructFieldRuleViolationError[T]) {
 	for i, err := range flattenErrors(e.Err) {
 		if i > 0 {
 			w.Write([]byte("\n"))
@@ -193,10 +193,12 @@ type StructFieldRuleViolationPrinter[T any] interface {
 	Printer[StructFieldRuleViolationError[T]]
 }
 
+// structFieldRuleValidator is not satisfy typedValidator.
+// Because it does not implement WithPrinter(p Printer[E]) method.
 var (
 	_ Validator                            = (*structFieldRuleValidator)(nil)
 	_ ViolationError                       = (*StructFieldRuleViolationError[any])(nil)
-	_ StructFieldRuleViolationPrinter[any] = (*structFieldRulePrinter[any])(nil)
+	_ StructFieldRuleViolationPrinter[any] = (*structFieldRuleViolationPrinter[any])(nil)
 )
 
 func Field[T any](p *T, name string, opts ...any) StructField {
