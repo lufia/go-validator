@@ -2,7 +2,6 @@
 package validator
 
 import (
-	"errors"
 	"io"
 )
 
@@ -54,7 +53,7 @@ func (r *joinValidator) Validate(v any) error {
 			errs = append(errs, err)
 		}
 	}
-	return errors.Join(errs...)
+	return joinErrors(errs...)
 }
 
 var _ Validator = (*joinValidator)(nil)

@@ -2,7 +2,6 @@ package validator
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -148,7 +147,7 @@ func (r *structFieldRuleValidator) Validate(base any) error {
 		}
 	}
 	if len(errs) > 0 {
-		return r.field.createError(p, errors.Join(errs...))
+		return r.field.createError(p, joinErrors(errs...))
 	}
 	return nil
 }
