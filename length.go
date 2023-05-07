@@ -212,12 +212,6 @@ type LengthViolationPrinter[T ~string] interface {
 	Printer[LengthViolationError[T]]
 }
 
-type LengthViolationPrinterFunc[T ~string] func(w io.Writer, min, max int)
-
-func (p LengthViolationPrinterFunc[T]) Print(w io.Writer, e LengthViolationError[T]) {
-	p(w, e.Min, e.Max)
-}
-
 var _ typedValidator[
 	*LengthValidator[string],
 	LengthViolationError[string],
