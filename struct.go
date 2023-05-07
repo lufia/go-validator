@@ -84,8 +84,13 @@ func (e StructRuleViolationError[T]) Unwrap() []error {
 type structRuleViolationPrinter[T any] struct{}
 
 func (structRuleViolationPrinter[T]) Print(w io.Writer, e *StructRuleViolationError[T]) {
+	i := 0
 	for _, err := range e.Errors {
-		fmt.Fprintln(w, err)
+		if i > 0 {
+			w.Write([]byte("\n"))
+		}
+		fmt.Fprint(w, err)
+		i++
 	}
 }
 

@@ -5,9 +5,19 @@ Yet another validator written in Go.
 [![Actions Status][actions-image]][actions-url]
 [![Coverage Status][coveralls-image]][coveralls-url]
 
-## motivation
+## Description
 
 TODO
+
+## Built-in validators
+
+* **Required**: validates comparable types if the value is not zero-value.
+* **Length**: validates strings if the length of the value is within the range.
+* **MinLength**: see **Length**.
+* **MaxLength**: see **Length**.
+* **InRange**: validates ordered types if the value is within the range.
+* **Min**: see **InRange**.
+* **Max**: see **InRange**.
 
 [godev-image]: https://pkg.go.dev/badge/github.com/lufia/go-validator
 [godev-url]: https://pkg.go.dev/github.com/lufia/go-validator
