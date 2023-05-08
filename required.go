@@ -11,16 +11,19 @@ func Required[T comparable]() *RequiredValidator[T] {
 	return &RequiredValidator[T]{}
 }
 
+// RequiredValidator represents the validator to check the value is not zero-value.
 type RequiredValidator[T comparable] struct {
 	p RequiredViolationPrinter[T]
 }
 
+// WithPrinter returns shallow copy of r with its Printer changed to p.
 func (r *RequiredValidator[T]) WithPrinter(p RequiredViolationPrinter[T]) *RequiredValidator[T] {
 	rr := *r
 	rr.p = p
 	return &rr
 }
 
+// WithPrinterFunc returns shallow copy of r with its printer function changed to fn.
 func (r *RequiredValidator[T]) WithPrinterFunc(fn func(w io.Writer)) *RequiredValidator[T] {
 	rr := *r
 	rr.p = makePrinterFunc(func(w io.Writer, _ *RequiredViolationError[T]) {
@@ -29,6 +32,7 @@ func (r *RequiredValidator[T]) WithPrinterFunc(fn func(w io.Writer)) *RequiredVa
 	return &rr
 }
 
+// Validate validates v. If v's type is not T, Validate panics.
 func (r *RequiredValidator[T]) Validate(v any) error {
 	s := v.(T)
 	var v0 T
@@ -41,11 +45,13 @@ func (r *RequiredValidator[T]) Validate(v any) error {
 	return nil
 }
 
+// RequiredViolationError reports an error is caused in RequiredValidator.
 type RequiredViolationError[T comparable] struct {
 	Value T
 	rule  *RequiredValidator[T]
 }
 
+// Error implements the error interface.
 func (e RequiredViolationError[T]) Error() string {
 	p := e.rule.p
 	if p == nil {
@@ -62,6 +68,7 @@ func (requiredPrinter[T]) Print(w io.Writer, e *RequiredViolationError[T]) {
 	fmt.Fprintf(w, "cannot be the zero value")
 }
 
+// RequiredViolationPrinter is the interface that wraps Print method.
 type RequiredViolationPrinter[T comparable] interface {
 	Printer[RequiredViolationError[T]]
 }

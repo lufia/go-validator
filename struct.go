@@ -7,6 +7,7 @@ import (
 	"reflect"
 )
 
+// Struct returns the validator to verify that the struct satisfies rules constrated with build.
 func Struct[T any](build func(s StructRuleAdder, v *T)) *StructRuleValidator[T] {
 	var (
 		s StructRuleValidator[T]
@@ -21,17 +22,29 @@ func Struct[T any](build func(s StructRuleAdder, v *T)) *StructRuleValidator[T] 
 	return &s
 }
 
+// StructRuleValidator represents the validator to check the struct satisfies its rules.
 type StructRuleValidator[T any] struct {
 	rule *structRule[T]
 	p    StructRuleViolationPrinter[T]
 }
 
+// WithPrinter returns shallow copy of r with its Printer changed to p.
 func (r *StructRuleValidator[T]) WithPrinter(p StructRuleViolationPrinter[T]) *StructRuleValidator[T] {
 	rr := *r
 	rr.p = p
 	return &rr
 }
 
+// WithPrinterFunc returns shallow copy of r with its printer function changed to fn.
+func (r *StructRuleValidator[T]) WithPrinterFunc(fn func(w io.Writer, m map[string]error)) *StructRuleValidator[T] {
+	rr := *r
+	rr.p = makePrinterFunc(func(w io.Writer, e *StructRuleViolationError[T]) {
+		fn(w, e.Errors)
+	})
+	return &rr
+}
+
+// Validate validates v. If v's type is not T, Validate panics.
 func (r *StructRuleValidator[T]) Validate(v any) error {
 	p := reflect.ValueOf(v)
 	if p.Kind() == reflect.Pointer {
@@ -54,12 +67,14 @@ func (r *StructRuleValidator[T]) Validate(v any) error {
 	return nil
 }
 
+// StructRuleViolationError reports an error is caused in StructRuleValidator.
 type StructRuleViolationError[T any] struct {
 	Value  *T
 	Errors map[string]error
 	rule   *StructRuleValidator[T]
 }
 
+// Error implements the error interface.
 func (e StructRuleViolationError[T]) Error() string {
 	p := e.rule.p
 	if p == nil {
@@ -70,6 +85,7 @@ func (e StructRuleViolationError[T]) Error() string {
 	return w.String()
 }
 
+// Unwrap returns each errors of err.
 func (e StructRuleViolationError[T]) Unwrap() []error {
 	if len(e.Errors) == 0 {
 		return nil
@@ -94,6 +110,7 @@ func (structRuleViolationPrinter[T]) Print(w io.Writer, e *StructRuleViolationEr
 	}
 }
 
+// StructRuleViolationPrinter is the interface that wraps Print method.
 type StructRuleViolationPrinter[T any] interface {
 	Printer[StructRuleViolationError[T]]
 }
@@ -104,6 +121,7 @@ var _ typedValidator[
 	StructRuleViolationPrinter[any],
 ] = (*StructRuleValidator[any])(nil)
 
+// StructRuleAdder is the interface that wraps Add method.
 type StructRuleAdder interface {
 	Add(field StructField, vs ...Validator)
 }
@@ -113,6 +131,7 @@ type structRule[T any] struct {
 	fields map[string]*structFieldRuleValidator
 }
 
+// Add adds the rule.
 func (r *structRule[T]) Add(field StructField, vs ...Validator) {
 	offset := field.offsetFrom(r.base)
 	f := lookupStructField(r.base, offset)
@@ -157,12 +176,14 @@ func (r *structFieldRuleValidator) Validate(base any) error {
 	return nil
 }
 
+// StructFieldRuleViolationError reports an error is caused in StructRuleValidator.
 type StructFieldRuleViolationError[T any] struct {
 	Name  string
 	Value T
 	Err   error
 }
 
+// Error implements the error interface.
 func (e StructFieldRuleViolationError[T]) Error() string {
 	p := &structFieldRuleViolationPrinter[T]{}
 	var w bytes.Buffer
@@ -193,6 +214,7 @@ func flattenErrors(err error) []error {
 	return errs
 }
 
+// StructFieldRuleViolationPrinter is the interface that wraps Print method.
 type StructFieldRuleViolationPrinter[T any] interface {
 	Printer[StructFieldRuleViolationError[T]]
 }
@@ -205,6 +227,7 @@ var (
 	_ StructFieldRuleViolationPrinter[any] = (*structFieldRuleViolationPrinter[any])(nil)
 )
 
+// Field returns the p's field of the struct T.
 func Field[T any](p *T, name string) StructField {
 	return &structField[T]{
 		name: name,
@@ -217,6 +240,7 @@ type structField[T any] struct {
 	p    *T
 }
 
+// Name returns field's name.
 func (f *structField[T]) Name() string {
 	return f.name
 }
@@ -240,6 +264,7 @@ func (f *structField[T]) createError(v any, err error) ViolationError {
 	}
 }
 
+// StructField is the interface that is used by StructRuleAdder.
 type StructField interface {
 	Name() string
 	offsetFrom(base any) uintptr
