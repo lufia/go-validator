@@ -15,15 +15,15 @@ func TestMinLength(t *testing.T) {
 	})
 }
 
-type testMinLengthViolationPrinter[T ~string] struct{}
+type testMinLengthErrorPrinter[T ~string] struct{}
 
-func (testMinLengthViolationPrinter[T]) Print(w io.Writer, e *MinLengthViolationError[T]) {
+func (testMinLengthErrorPrinter[T]) Print(w io.Writer, e *MinLengthError[T]) {
 	fmt.Fprintf(w, "'%v' is less than %v", e.Value, e.Min)
 }
 
 func TestMinLengthWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := MinLength[string](3).WithPrinter(&testMinLengthViolationPrinter[string]{})
+		v := MinLength[string](3).WithPrinter(&testMinLengthErrorPrinter[string]{})
 		testValidate(t, v, "ab", "'ab' is less than 3")
 	})
 	t.Run("printerfunc", func(t *testing.T) {
@@ -43,15 +43,15 @@ func TestMaxLength(t *testing.T) {
 	})
 }
 
-type testMaxLengthViolationPrinter[T ~string] struct{}
+type testMaxLengthErrorPrinter[T ~string] struct{}
 
-func (testMaxLengthViolationPrinter[T]) Print(w io.Writer, e *MaxLengthViolationError[T]) {
+func (testMaxLengthErrorPrinter[T]) Print(w io.Writer, e *MaxLengthError[T]) {
 	fmt.Fprintf(w, "'%v' is greater than %v", e.Value, e.Max)
 }
 
 func TestMaxLengthWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := MaxLength[string](3).WithPrinter(&testMaxLengthViolationPrinter[string]{})
+		v := MaxLength[string](3).WithPrinter(&testMaxLengthErrorPrinter[string]{})
 		testValidate(t, v, "1234", "'1234' is greater than 3")
 	})
 	t.Run("printerfunc", func(t *testing.T) {
@@ -72,15 +72,15 @@ func TestLength(t *testing.T) {
 	})
 }
 
-type testLengthViolationPrinter[T ~string] struct{}
+type testLengthErrorPrinter[T ~string] struct{}
 
-func (testLengthViolationPrinter[T]) Print(w io.Writer, e *LengthViolationError[T]) {
+func (testLengthErrorPrinter[T]) Print(w io.Writer, e *LengthError[T]) {
 	fmt.Fprintf(w, "'%v' is out of range(%v, %v)", e.Value, e.Min, e.Max)
 }
 
 func TestLengthWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := Length[string](1, 3).WithPrinter(&testLengthViolationPrinter[string]{})
+		v := Length[string](1, 3).WithPrinter(&testLengthErrorPrinter[string]{})
 		testValidate(t, v, "1234", "'1234' is out of range(1, 3)")
 	})
 	t.Run("printerfunc", func(t *testing.T) {

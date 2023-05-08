@@ -10,19 +10,19 @@ type Validator interface {
 	Validate(v any) error
 }
 
-// ViolationError is the interface that wraps Error method.
-type ViolationError interface {
+// Error is the interface that wraps Error method.
+type Error interface {
 	error
 }
 
 // Printer is the interface that wraps Print method.
-type Printer[E ViolationError] interface {
+type Printer[E Error] interface {
 	Print(w io.Writer, e *E)
 }
 
-type printerFunc[E ViolationError] func(w io.Writer, e *E)
+type printerFunc[E Error] func(w io.Writer, e *E)
 
-func makePrinterFunc[E ViolationError](fn func(w io.Writer, e *E)) printerFunc[E] {
+func makePrinterFunc[E Error](fn func(w io.Writer, e *E)) printerFunc[E] {
 	return printerFunc[E](fn)
 }
 
@@ -30,7 +30,7 @@ func (p printerFunc[E]) Print(w io.Writer, e *E) {
 	p(w, e)
 }
 
-var _ Printer[RequiredViolationError[string]] = (printerFunc[RequiredViolationError[string]])(nil)
+var _ Printer[RequiredError[string]] = (printerFunc[RequiredError[string]])(nil)
 
 // Join bundles vs to a validator.
 func Join(vs ...Validator) Validator {
@@ -62,7 +62,7 @@ func (r *joinValidator) Validate(v any) error {
 
 var _ Validator = (*joinValidator)(nil)
 
-type typedValidator[V Validator, E ViolationError, P Printer[E]] interface {
+type typedValidator[V Validator, E Error, P Printer[E]] interface {
 	Validator
 	WithPrinter(p P) V
 }

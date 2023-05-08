@@ -20,15 +20,15 @@ func TestRequired(t *testing.T) {
 	})
 }
 
-type testRequiredViolationPrinter[T comparable] struct{}
+type testRequiredErrorPrinter[T comparable] struct{}
 
-func (testRequiredViolationPrinter[T]) Print(w io.Writer, e *RequiredViolationError[T]) {
+func (testRequiredErrorPrinter[T]) Print(w io.Writer, e *RequiredError[T]) {
 	fmt.Fprintf(w, "'%v' is empty", e.Value)
 }
 
 func TestRequiredWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := Required[string]().WithPrinter(&testRequiredViolationPrinter[string]{})
+		v := Required[string]().WithPrinter(&testRequiredErrorPrinter[string]{})
 		testValidate(t, v, "", "'' is empty")
 	})
 	t.Run("printerfunc", func(t *testing.T) {

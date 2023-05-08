@@ -52,7 +52,7 @@ func testErrors[T any](t *testing.T, err error, want []string) {
 		t.Errorf("got <nil>; want %#v", want)
 		return
 	}
-	errs := err.(*StructRuleViolationError[T]).Errors
+	errs := err.(*StructRuleError[T]).Errors
 	e := make([]string, 0, len(errs))
 	for _, err := range errs {
 		e = append(e, err.Error())

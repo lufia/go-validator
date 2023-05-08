@@ -25,11 +25,11 @@ func Struct[T any](build func(s StructRuleAdder, v *T)) *StructRuleValidator[T] 
 // StructRuleValidator represents the validator to check the struct satisfies its rules.
 type StructRuleValidator[T any] struct {
 	rule *structRule[T]
-	p    StructRuleViolationPrinter[T]
+	p    StructRuleErrorPrinter[T]
 }
 
 // WithPrinter returns shallow copy of r with its Printer changed to p.
-func (r *StructRuleValidator[T]) WithPrinter(p StructRuleViolationPrinter[T]) *StructRuleValidator[T] {
+func (r *StructRuleValidator[T]) WithPrinter(p StructRuleErrorPrinter[T]) *StructRuleValidator[T] {
 	rr := *r
 	rr.p = p
 	return &rr
@@ -38,7 +38,7 @@ func (r *StructRuleValidator[T]) WithPrinter(p StructRuleViolationPrinter[T]) *S
 // WithPrinterFunc returns shallow copy of r with its printer function changed to fn.
 func (r *StructRuleValidator[T]) WithPrinterFunc(fn func(w io.Writer, m map[string]error)) *StructRuleValidator[T] {
 	rr := *r
-	rr.p = makePrinterFunc(func(w io.Writer, e *StructRuleViolationError[T]) {
+	rr.p = makePrinterFunc(func(w io.Writer, e *StructRuleError[T]) {
 		fn(w, e.Errors)
 	})
 	return &rr
@@ -58,7 +58,7 @@ func (r *StructRuleValidator[T]) Validate(v any) error {
 		}
 	}
 	if len(errs) > 0 {
-		return &StructRuleViolationError[T]{
+		return &StructRuleError[T]{
 			Value:  r.rule.base,
 			Errors: errs,
 			rule:   r,
@@ -67,18 +67,18 @@ func (r *StructRuleValidator[T]) Validate(v any) error {
 	return nil
 }
 
-// StructRuleViolationError reports an error is caused in StructRuleValidator.
-type StructRuleViolationError[T any] struct {
+// StructRuleError reports an error is caused in StructRuleValidator.
+type StructRuleError[T any] struct {
 	Value  *T
 	Errors map[string]error
 	rule   *StructRuleValidator[T]
 }
 
 // Error implements the error interface.
-func (e StructRuleViolationError[T]) Error() string {
+func (e StructRuleError[T]) Error() string {
 	p := e.rule.p
 	if p == nil {
-		p = &structRuleViolationPrinter[T]{}
+		p = &structRuleErrorPrinter[T]{}
 	}
 	var w bytes.Buffer
 	p.Print(&w, &e)
@@ -86,7 +86,7 @@ func (e StructRuleViolationError[T]) Error() string {
 }
 
 // Unwrap returns each errors of err.
-func (e StructRuleViolationError[T]) Unwrap() []error {
+func (e StructRuleError[T]) Unwrap() []error {
 	if len(e.Errors) == 0 {
 		return nil
 	}
@@ -97,9 +97,9 @@ func (e StructRuleViolationError[T]) Unwrap() []error {
 	return errs
 }
 
-type structRuleViolationPrinter[T any] struct{}
+type structRuleErrorPrinter[T any] struct{}
 
-func (structRuleViolationPrinter[T]) Print(w io.Writer, e *StructRuleViolationError[T]) {
+func (structRuleErrorPrinter[T]) Print(w io.Writer, e *StructRuleError[T]) {
 	i := 0
 	for _, err := range e.Errors {
 		if i > 0 {
@@ -110,15 +110,15 @@ func (structRuleViolationPrinter[T]) Print(w io.Writer, e *StructRuleViolationEr
 	}
 }
 
-// StructRuleViolationPrinter is the interface that wraps Print method.
-type StructRuleViolationPrinter[T any] interface {
-	Printer[StructRuleViolationError[T]]
+// StructRuleErrorPrinter is the interface that wraps Print method.
+type StructRuleErrorPrinter[T any] interface {
+	Printer[StructRuleError[T]]
 }
 
 var _ typedValidator[
 	*StructRuleValidator[any],
-	StructRuleViolationError[any],
-	StructRuleViolationPrinter[any],
+	StructRuleError[any],
+	StructRuleErrorPrinter[any],
 ] = (*StructRuleValidator[any])(nil)
 
 // StructRuleAdder is the interface that wraps Add method.
@@ -176,24 +176,24 @@ func (r *structFieldRuleValidator) Validate(base any) error {
 	return nil
 }
 
-// StructFieldRuleViolationError reports an error is caused in StructRuleValidator.
-type StructFieldRuleViolationError[T any] struct {
+// StructFieldRuleError reports an error is caused in StructRuleValidator.
+type StructFieldRuleError[T any] struct {
 	Name  string
 	Value T
 	Err   error
 }
 
 // Error implements the error interface.
-func (e StructFieldRuleViolationError[T]) Error() string {
-	p := &structFieldRuleViolationPrinter[T]{}
+func (e StructFieldRuleError[T]) Error() string {
+	p := &structFieldRuleErrorPrinter[T]{}
 	var w bytes.Buffer
 	p.Print(&w, &e)
 	return w.String()
 }
 
-type structFieldRuleViolationPrinter[T any] struct{}
+type structFieldRuleErrorPrinter[T any] struct{}
 
-func (structFieldRuleViolationPrinter[T]) Print(w io.Writer, e *StructFieldRuleViolationError[T]) {
+func (structFieldRuleErrorPrinter[T]) Print(w io.Writer, e *StructFieldRuleError[T]) {
 	for i, err := range flattenErrors(e.Err) {
 		if i > 0 {
 			w.Write([]byte("\n"))
@@ -214,17 +214,17 @@ func flattenErrors(err error) []error {
 	return errs
 }
 
-// StructFieldRuleViolationPrinter is the interface that wraps Print method.
-type StructFieldRuleViolationPrinter[T any] interface {
-	Printer[StructFieldRuleViolationError[T]]
+// StructFieldRuleErrorPrinter is the interface that wraps Print method.
+type StructFieldRuleErrorPrinter[T any] interface {
+	Printer[StructFieldRuleError[T]]
 }
 
 // structFieldRuleValidator is not satisfy typedValidator.
 // Because it does not implement WithPrinter(p Printer[E]) method.
 var (
-	_ Validator                            = (*structFieldRuleValidator)(nil)
-	_ ViolationError                       = (*StructFieldRuleViolationError[any])(nil)
-	_ StructFieldRuleViolationPrinter[any] = (*structFieldRuleViolationPrinter[any])(nil)
+	_ Validator                        = (*structFieldRuleValidator)(nil)
+	_ Error                            = (*StructFieldRuleError[any])(nil)
+	_ StructFieldRuleErrorPrinter[any] = (*structFieldRuleErrorPrinter[any])(nil)
 )
 
 // Field returns the p's field of the struct T.
@@ -256,8 +256,8 @@ func (f *structField[T]) valueOf(base any, index []int) any {
 	return p.FieldByIndex(index).Interface()
 }
 
-func (f *structField[T]) createError(v any, err error) ViolationError {
-	return &StructFieldRuleViolationError[T]{
+func (f *structField[T]) createError(v any, err error) Error {
+	return &StructFieldRuleError[T]{
 		Name:  f.name,
 		Value: v.(T),
 		Err:   err,
@@ -269,7 +269,7 @@ type StructField interface {
 	Name() string
 	offsetFrom(base any) uintptr
 	valueOf(base any, index []int) any
-	createError(v any, err error) ViolationError
+	createError(v any, err error) Error
 }
 
 var _ StructField = (*structField[string])(nil)

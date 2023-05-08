@@ -15,15 +15,15 @@ func TestMin(t *testing.T) {
 	})
 }
 
-type testMinViolationPrinter[T ordered] struct{}
+type testMinErrorPrinter[T ordered] struct{}
 
-func (testMinViolationPrinter[T]) Print(w io.Writer, e *MinViolationError[T]) {
+func (testMinErrorPrinter[T]) Print(w io.Writer, e *MinError[T]) {
 	fmt.Fprintf(w, "'%v' is less than %v", e.Value, e.Min)
 }
 
 func TestMinWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := Min(3).WithPrinter(&testMinViolationPrinter[int]{})
+		v := Min(3).WithPrinter(&testMinErrorPrinter[int]{})
 		testValidate(t, v, 2, "'2' is less than 3")
 	})
 	t.Run("printerfunc", func(t *testing.T) {
@@ -43,15 +43,15 @@ func TestMax(t *testing.T) {
 	})
 }
 
-type testMaxViolationPrinter[T ordered] struct{}
+type testMaxErrorPrinter[T ordered] struct{}
 
-func (testMaxViolationPrinter[T]) Print(w io.Writer, e *MaxViolationError[T]) {
+func (testMaxErrorPrinter[T]) Print(w io.Writer, e *MaxError[T]) {
 	fmt.Fprintf(w, "'%v' is greater than %v", e.Value, e.Max)
 }
 
 func TestMaxWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := Max(3).WithPrinter(&testMaxViolationPrinter[int]{})
+		v := Max(3).WithPrinter(&testMaxErrorPrinter[int]{})
 		testValidate(t, v, 4, "'4' is greater than 3")
 	})
 	t.Run("printerfunc", func(t *testing.T) {
@@ -72,15 +72,15 @@ func TestInRange(t *testing.T) {
 	})
 }
 
-type testInRangeViolationPrinter[T ordered] struct{}
+type testInRangeErrorPrinter[T ordered] struct{}
 
-func (testInRangeViolationPrinter[T]) Print(w io.Writer, e *InRangeViolationError[T]) {
+func (testInRangeErrorPrinter[T]) Print(w io.Writer, e *InRangeError[T]) {
 	fmt.Fprintf(w, "'%v' is out of range(%v, %v)", e.Value, e.Min, e.Max)
 }
 
 func TestInRangeWithPrinter(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := InRange(1, 3).WithPrinter(&testInRangeViolationPrinter[int]{})
+		v := InRange(1, 3).WithPrinter(&testInRangeErrorPrinter[int]{})
 		testValidate(t, v, 4, "'4' is out of range(1, 3)")
 	})
 	t.Run("printerfunc", func(t *testing.T) {
