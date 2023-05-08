@@ -31,7 +31,7 @@ func (r *MinValidator[T]) WithPrinter(p MinViolationPrinter[T]) *MinValidator[T]
 
 func (r *MinValidator[T]) WithPrinterFunc(fn func(w io.Writer, min T)) *MinValidator[T] {
 	rr := *r
-	rr.p = printerFunc(func(w io.Writer, e *MinViolationError[T]) {
+	rr.p = makePrinterFunc(func(w io.Writer, e *MinViolationError[T]) {
 		fn(w, e.Min)
 	})
 	return &rr
@@ -100,7 +100,7 @@ func (r *MaxValidator[T]) WithPrinter(p MaxViolationPrinter[T]) *MaxValidator[T]
 
 func (r *MaxValidator[T]) WithPrinterFunc(fn func(w io.Writer, max T)) *MaxValidator[T] {
 	rr := *r
-	rr.p = printerFunc(func(w io.Writer, e *MaxViolationError[T]) {
+	rr.p = makePrinterFunc(func(w io.Writer, e *MaxViolationError[T]) {
 		fn(w, e.Max)
 	})
 	return &rr
@@ -170,7 +170,7 @@ func (r *InRangeValidator[T]) WithPrinter(p InRangeViolationPrinter[T]) *InRange
 
 func (r *InRangeValidator[T]) WithPrinterFunc(fn func(w io.Writer, min, max T)) *InRangeValidator[T] {
 	rr := *r
-	rr.p = printerFunc(func(w io.Writer, e *InRangeViolationError[T]) {
+	rr.p = makePrinterFunc(func(w io.Writer, e *InRangeViolationError[T]) {
 		fn(w, e.Min, e.Max)
 	})
 	return &rr

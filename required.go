@@ -25,7 +25,7 @@ func (r *RequiredValidator[T]) WithPrinter(p RequiredViolationPrinter[T]) *Requi
 
 func (r *RequiredValidator[T]) WithPrinterFunc(fn func(w io.Writer)) *RequiredValidator[T] {
 	rr := *r
-	rr.p = printerFunc(func(w io.Writer, _ *RequiredViolationError[T]) {
+	rr.p = makePrinterFunc(func(w io.Writer, _ *RequiredViolationError[T]) {
 		fn(w)
 	})
 	return &rr

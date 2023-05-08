@@ -18,17 +18,17 @@ type Printer[E ViolationError] interface {
 	Print(w io.Writer, e *E)
 }
 
-type PrinterFunc[E ViolationError] func(w io.Writer, e *E)
+type printerFunc[E ViolationError] func(w io.Writer, e *E)
 
-func printerFunc[E ViolationError](fn func(w io.Writer, e *E)) PrinterFunc[E] {
-	return PrinterFunc[E](fn)
+func makePrinterFunc[E ViolationError](fn func(w io.Writer, e *E)) printerFunc[E] {
+	return printerFunc[E](fn)
 }
 
-func (p PrinterFunc[E]) Print(w io.Writer, e *E) {
+func (p printerFunc[E]) Print(w io.Writer, e *E) {
 	p(w, e)
 }
 
-var _ Printer[RequiredViolationError[string]] = (PrinterFunc[RequiredViolationError[string]])(nil)
+var _ Printer[RequiredViolationError[string]] = (printerFunc[RequiredViolationError[string]])(nil)
 
 func Join(vs ...Validator) Validator {
 	var a []Validator
