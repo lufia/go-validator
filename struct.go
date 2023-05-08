@@ -205,7 +205,7 @@ var (
 	_ StructFieldRuleViolationPrinter[any] = (*structFieldRuleViolationPrinter[any])(nil)
 )
 
-func Field[T any](p *T, name string, opts ...any) StructField {
+func Field[T any](p *T, name string) StructField {
 	return &structField[T]{
 		name: name,
 		p:    p,

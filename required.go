@@ -7,8 +7,6 @@ import (
 )
 
 // Required returns the validator to verify the value is not zero value.
-// When opts contains the type InvalidTypePrinter,
-// it will be used to print the invalid type error.
 func Required[T comparable]() *RequiredValidator[T] {
 	return &RequiredValidator[T]{}
 }
