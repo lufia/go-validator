@@ -55,16 +55,16 @@ type RequiredError[T comparable] struct {
 func (e RequiredError[T]) Error() string {
 	p := e.rule.p
 	if p == nil {
-		p = &requiredPrinter[T]{}
+		p = &requiredErrorPrinter[T]{}
 	}
 	var w bytes.Buffer
 	p.Print(&w, &e)
 	return w.String()
 }
 
-type requiredPrinter[T comparable] struct{}
+type requiredErrorPrinter[T comparable] struct{}
 
-func (requiredPrinter[T]) Print(w io.Writer, e *RequiredError[T]) {
+func (requiredErrorPrinter[T]) Print(w io.Writer, e *RequiredError[T]) {
 	fmt.Fprintf(w, "cannot be the zero value")
 }
 
