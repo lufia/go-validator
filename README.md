@@ -18,6 +18,7 @@ TODO
 * **InRange**: validates ordered types if the value is within the range.
 * **Min**: see **InRange**.
 * **Max**: see **InRange**.
+* **In**: validates comparable types if the value is in valid values.
 
 [godev-image]: https://pkg.go.dev/badge/github.com/lufia/go-validator
 [godev-url]: https://pkg.go.dev/github.com/lufia/go-validator
