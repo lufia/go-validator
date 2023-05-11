@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -62,4 +63,23 @@ func TestJoinValidator_Validate(t *testing.T) {
 			t.Errorf("Validate(%q) should return an error", s)
 		}
 	})
+}
+
+func TestOrderedMap(t *testing.T) {
+	tests := map[string][]string{
+		"names":  {"sys", "dev", "bin"},
+		"digits": {"1", "2", "3"},
+	}
+	for name, a := range tests {
+		t.Run(name, func(t *testing.T) {
+			var m OrderedMap[string, int]
+			for i, s := range a {
+				m.set(s, i)
+			}
+			keys := m.Keys()
+			if !reflect.DeepEqual(keys, a) {
+				t.Errorf("Keys() = %v; want %v", keys, a)
+			}
+		})
+	}
 }

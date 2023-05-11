@@ -66,3 +66,36 @@ type typedValidator[V Validator, E Error, P Printer[E]] interface {
 	Validator
 	WithPrinter(p P) V
 }
+
+// OrderedMap is a map that guarantee that the iteration order of entries
+// will be the order in which they were set.
+type OrderedMap[K comparable, V any] struct {
+	keys   []K
+	values map[K]V
+}
+
+func (m *OrderedMap[K, V]) set(key K, v V) {
+	if m.values == nil {
+		m.values = make(map[K]V)
+	}
+	if _, ok := m.values[key]; !ok {
+		m.keys = append(m.keys, key)
+	}
+	m.values[key] = v
+}
+
+// Len returns the length of m.
+func (m *OrderedMap[K, V]) Len() int {
+	return len(m.keys)
+}
+
+// Keys returns keys of m. These keys preserves the order in which they were set.
+func (m *OrderedMap[K, V]) Keys() []K {
+	return m.keys
+}
+
+// Get returns a value associated to key.
+func (m *OrderedMap[K, V]) Get(key K) (V, bool) {
+	v, ok := m.values[key]
+	return v, ok
+}
