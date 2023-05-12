@@ -1,243 +1,178 @@
 package validator
 
 import (
-	"bytes"
-	"fmt"
-	"io"
+	"context"
+	"errors"
+
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
+const (
+	minLengthKey = "the length must be no less than %v"
+	maxLengthKey = "the length must be no greater than %v"
+	lengthKey    = "the length must be in range(%v ... %v)"
+)
+
+func init() {
+	DefaultCatalog.SetString(language.English, minLengthKey, minLengthKey)
+	DefaultCatalog.SetString(language.Japanese, minLengthKey, "xxx")
+
+	DefaultCatalog.SetString(language.English, maxLengthKey, maxLengthKey)
+	DefaultCatalog.SetString(language.Japanese, maxLengthKey, "xxx")
+
+	DefaultCatalog.SetString(language.English, lengthKey, lengthKey)
+	DefaultCatalog.SetString(language.Japanese, lengthKey, "xxx")
+}
+
 // MinLength returns the validator to verify the length of the value is greater or equal than n.
-func MinLength[T ~string](n int) *MinLengthValidator[T] {
-	var r MinLengthValidator[T]
-	r.min = n
-	return &r
+//
+// This validator has an arg in its reference key.
+//   - min: specified min value (type int)
+//   - value: user input (type T)
+func MinLength[T ~string](n int) Validator[T] {
+	return &minLengthValidator[T]{
+		min:  n,
+		key:  minLengthKey,
+		args: []Arg{ByName("min")},
+	}
 }
 
-// MinLengthValidator represents the validator to check the length of the value is greater or equal than T.
-type MinLengthValidator[T ~string] struct {
-	min int
-	p   MinLengthErrorPrinter[T]
+// minLengthValidator represents the validator to check the length of the value is greater or equal than T.
+type minLengthValidator[T ~string] struct {
+	min  int
+	key  message.Reference
+	args []Arg
 }
 
-// WithPrinter returns shallow copy of r with its Printer changed to p.
-func (r *MinLengthValidator[T]) WithPrinter(p MinLengthErrorPrinter[T]) *MinLengthValidator[T] {
+// WithReferenceKey returns shallow copy of r with its reference key changed to key.
+func (r *minLengthValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
-	rr.p = p
+	rr.key = key
+	rr.args = a
 	return &rr
 }
 
-// WithPrinterFunc returns shallow copy of r with its printer function changed to fn.
-func (r *MinLengthValidator[T]) WithPrinterFunc(fn func(w io.Writer, min int)) *MinLengthValidator[T] {
-	rr := *r
-	rr.p = makePrinterFunc(func(w io.Writer, e *MinLengthError[T]) {
-		fn(w, e.Min)
-	})
-	return &rr
-}
-
-// Validate validates v. If v's type is not T, Validate panics.
-func (r *MinLengthValidator[T]) Validate(v any) error {
-	s := v.(T)
-	a := []rune(s)
+// Validate validates v.
+func (r *minLengthValidator[T]) Validate(ctx context.Context, v T) error {
+	a := []rune(v)
 	if len(a) < r.min {
-		return &MinLengthError[T]{
-			Value: s,
+		e := &minLengthError[T]{
+			Value: v,
 			Min:   r.min,
-			rule:  r,
 		}
+		return errors.New(ctxPrint(ctx, e, r.key, r.args))
 	}
 	return nil
 }
 
-// MinLengthError reports an error is caused in MinLengthValidator.
-type MinLengthError[T ~string] struct {
-	Value T
-	Min   int
-	rule  *MinLengthValidator[T]
+// minLengthError reports an error is caused in MinLength validator.
+type minLengthError[T ~string] struct {
+	Min   int `arg:"min"`
+	Value T   `arg:"value"`
 }
 
-// Error implements the error interface.
-func (e MinLengthError[T]) Error() string {
-	p := e.rule.p
-	if p == nil {
-		p = &minLengthErrorPrinter[T]{}
-	}
-	var w bytes.Buffer
-	p.Print(&w, &e)
-	return w.String()
-}
-
-type minLengthErrorPrinter[T ~string] struct{}
-
-func (minLengthErrorPrinter[T]) Print(w io.Writer, e *MinLengthError[T]) {
-	fmt.Fprintf(w, "the length must be no less than %v", e.Min)
-}
-
-// MinLengthErrorPrinter is the interface that wraps Print method.
-type MinLengthErrorPrinter[T ~string] interface {
-	Printer[MinLengthError[T]]
-}
-
-var _ typedValidator[
-	*MinLengthValidator[string],
-	MinLengthError[string],
-	MinLengthErrorPrinter[string],
-] = (*MinLengthValidator[string])(nil)
+var _ Validator[string] = (*minLengthValidator[string])(nil)
 
 // MaxLength returns the validator to verify the length of the value is less or equal than n.
-func MaxLength[T ~string](n int) *MaxLengthValidator[T] {
-	var r MaxLengthValidator[T]
-	r.max = n
-	return &r
+//
+// This validator has an arg in its reference key.
+//   - max: specified max value (type int)
+//   - value: user input (type T)
+func MaxLength[T ~string](n int) Validator[T] {
+	return &maxLengthValidator[T]{
+		max:  n,
+		key:  maxLengthKey,
+		args: []Arg{ByName("max")},
+	}
 }
 
-// MaxLengthValidator represents the validator to check the length of the value is less or equal than T.
-type MaxLengthValidator[T ~string] struct {
-	max int
-	p   MaxLengthErrorPrinter[T]
+// maxLengthValidator represents the validator to check the length of the value is less or equal than T.
+type maxLengthValidator[T ~string] struct {
+	max  int
+	key  message.Reference
+	args []Arg
 }
 
-// WithPrinter returns shallow copy of r with its Printer changed to p.
-func (r *MaxLengthValidator[T]) WithPrinter(p MaxLengthErrorPrinter[T]) *MaxLengthValidator[T] {
+// WithReferenceKey returns shallow copy of r with its reference key changed to key.
+func (r *maxLengthValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
-	rr.p = p
+	rr.key = key
+	rr.args = a
 	return &rr
 }
 
-// WithPrinterFunc returns shallow copy of r with its printer function changed to fn.
-func (r *MaxLengthValidator[T]) WithPrinterFunc(fn func(w io.Writer, max int)) *MaxLengthValidator[T] {
-	rr := *r
-	rr.p = makePrinterFunc(func(w io.Writer, e *MaxLengthError[T]) {
-		fn(w, e.Max)
-	})
-	return &rr
-}
-
-// Validate validates v. If v's type is not T, Validate panics.
-func (r *MaxLengthValidator[T]) Validate(v any) error {
-	s := v.(T)
-	a := []rune(s)
+// Validate validates v.
+func (r *maxLengthValidator[T]) Validate(ctx context.Context, v T) error {
+	a := []rune(v)
 	if len(a) > r.max {
-		return &MaxLengthError[T]{
-			Value: s,
+		e := &maxLengthError[T]{
+			Value: v,
 			Max:   r.max,
-			rule:  r,
 		}
+		return errors.New(ctxPrint(ctx, e, r.key, r.args))
 	}
 	return nil
 }
 
-// MaxLengthError reports an error is caused in MaxLengthValidator.
-type MaxLengthError[T ~string] struct {
-	Value T
-	Max   int
-	rule  *MaxLengthValidator[T]
+// maxLengthError reports an error is caused in MaxLength validator.
+type maxLengthError[T ~string] struct {
+	Max   int `arg:"max"`
+	Value T   `arg:"value"`
 }
 
-// Error implements the error interface.
-func (e MaxLengthError[T]) Error() string {
-	p := e.rule.p
-	if p == nil {
-		p = &maxLengthErrorPrinter[T]{}
-	}
-	var w bytes.Buffer
-	p.Print(&w, &e)
-	return w.String()
-}
-
-type maxLengthErrorPrinter[T ~string] struct{}
-
-func (maxLengthErrorPrinter[T]) Print(w io.Writer, e *MaxLengthError[T]) {
-	fmt.Fprintf(w, "the length must be no greater than %v", e.Max)
-}
-
-// MaxLengthErrorPrinter is the interface that wraps Print method.
-type MaxLengthErrorPrinter[T ~string] interface {
-	Printer[MaxLengthError[T]]
-}
-
-var _ typedValidator[
-	*MaxLengthValidator[string],
-	MaxLengthError[string],
-	MaxLengthErrorPrinter[string],
-] = (*MaxLengthValidator[string])(nil)
+var _ Validator[string] = (*maxLengthValidator[string])(nil)
 
 // Length returns the validator to verify the length of the value is within min and max.
-func Length[T ~string](min, max int) *LengthValidator[T] {
-	var r LengthValidator[T]
-	r.min = min
-	r.max = max
-	return &r
+//
+// This validator has two args in its reference key.
+//   - min: specified min value (type int)
+//   - max: specified max value (type int)
+//   - value: user input (type T)
+func Length[T ~string](min, max int) Validator[T] {
+	return &lengthValidator[T]{
+		min:  min,
+		max:  max,
+		key:  lengthKey,
+		args: []Arg{ByName("min"), ByName("max")},
+	}
 }
 
-// LengthValidator represents the validator to check the length of the value is within T.
-type LengthValidator[T ~string] struct {
-	min, max int
-	p        LengthErrorPrinter[T]
+// lengthValidator represents the validator to check the length of the value is within T.
+type lengthValidator[T ~string] struct {
+	min  int
+	max  int
+	key  message.Reference
+	args []Arg
 }
 
-// WithPrinter returns shallow copy of r with its Printer changed to p.
-func (r *LengthValidator[T]) WithPrinter(p LengthErrorPrinter[T]) *LengthValidator[T] {
+// WithReferenceKey returns shallow copy of r with its reference key changed to key.
+func (r *lengthValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
-	rr.p = p
+	rr.key = key
+	rr.args = a
 	return &rr
 }
 
-// WithPrinterFunc returns shallow copy of r with its printer function changed to fn.
-func (r *LengthValidator[T]) WithPrinterFunc(fn func(w io.Writer, min, max int)) *LengthValidator[T] {
-	rr := *r
-	rr.p = makePrinterFunc(func(w io.Writer, e *LengthError[T]) {
-		fn(w, e.Min, e.Max)
-	})
-	return &rr
-}
-
-// Validate validates v. If v's type is not T, Validate panics.
-func (r *LengthValidator[T]) Validate(v any) error {
-	s := v.(T)
-	a := []rune(s)
+// Validate validates v.
+func (r *lengthValidator[T]) Validate(ctx context.Context, v T) error {
+	a := []rune(v)
 	if len(a) < r.min || len(a) > r.max {
-		return &LengthError[T]{
-			Value: s,
+		e := &lengthError[T]{
 			Min:   r.min,
 			Max:   r.max,
-			rule:  r,
+			Value: v,
 		}
+		return errors.New(ctxPrint(ctx, e, r.key, r.args))
 	}
 	return nil
 }
 
-// LengthError reports an error is caused in LengthValidator.
-type LengthError[T ~string] struct {
-	Value    T
-	Min, Max int
-	rule     *LengthValidator[T]
+// lengthError reports an error is caused in Length validator.
+type lengthError[T ~string] struct {
+	Min   int `arg:"min"`
+	Max   int `arg:"max"`
+	Value T   `arg:"value"`
 }
 
-// Error implements the error interface.
-func (e LengthError[T]) Error() string {
-	p := e.rule.p
-	if p == nil {
-		p = &lengthErrorPrinter[T]{}
-	}
-	var w bytes.Buffer
-	p.Print(&w, &e)
-	return w.String()
-}
-
-type lengthErrorPrinter[T ~string] struct{}
-
-func (lengthErrorPrinter[T]) Print(w io.Writer, e *LengthError[T]) {
-	fmt.Fprintf(w, "the length must be in range(%v ... %v)", e.Min, e.Max)
-}
-
-// LengthErrorPrinter is the interface that wraps Print method.
-type LengthErrorPrinter[T ~string] interface {
-	Printer[LengthError[T]]
-}
-
-var _ typedValidator[
-	*LengthValidator[string],
-	LengthError[string],
-	LengthErrorPrinter[string],
-] = (*LengthValidator[string])(nil)
+var _ Validator[string] = (*lengthValidator[string])(nil)

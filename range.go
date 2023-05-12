@@ -1,246 +1,180 @@
 package validator
 
 import (
-	"bytes"
-	"fmt"
-	"io"
+	"context"
+	"errors"
 
 	"golang.org/x/exp/constraints"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
+
+const (
+	minKey     = "must be no less than %v"
+	maxKey     = "must be no greater than %v"
+	inRangeKey = "must be in range(%v ... %v)"
+)
+
+func init() {
+	DefaultCatalog.SetString(language.English, minKey, minKey)
+	DefaultCatalog.SetString(language.Japanese, minKey, "xxx")
+
+	DefaultCatalog.SetString(language.English, maxKey, maxKey)
+	DefaultCatalog.SetString(language.Japanese, maxKey, "xxx")
+
+	DefaultCatalog.SetString(language.English, inRangeKey, inRangeKey)
+	DefaultCatalog.SetString(language.Japanese, inRangeKey, "xxx")
+}
 
 type ordered interface {
 	constraints.Ordered
 }
 
 // Min returns the validator to verify the value is greater or equal than n.
-func Min[T ordered](n T) *MinValidator[T] {
-	var r MinValidator[T]
-	r.min = n
-	return &r
+//
+// This validator has an arg in its reference key.
+//   - min: specified min value (type T)
+//   - value: user input (type T)
+func Min[T ordered](n T) Validator[T] {
+	return &minValidator[T]{
+		min:  n,
+		key:  minKey,
+		args: []Arg{ByName("min")},
+	}
 }
 
-// MinLengthValidator represents the validator to check the value is greater or equal than T.
-type MinValidator[T ordered] struct {
-	min T
-	p   MinErrorPrinter[T]
+// minValidator represents the validator to check the value is greater or equal than T.
+type minValidator[T ordered] struct {
+	min  T
+	key  message.Reference
+	args []Arg
 }
 
-// WithPrinter returns shallow copy of r with its Printer changed to p.
-func (r *MinValidator[T]) WithPrinter(p MinErrorPrinter[T]) *MinValidator[T] {
+// WithReferenceKey returns shallow copy of r with its reference key changed to key.
+func (r *minValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
-	rr.p = p
+	rr.key = key
+	rr.args = a
 	return &rr
 }
 
-// WithPrinterFunc returns shallow copy of r with its printer function changed to fn.
-func (r *MinValidator[T]) WithPrinterFunc(fn func(w io.Writer, min T)) *MinValidator[T] {
-	rr := *r
-	rr.p = makePrinterFunc(func(w io.Writer, e *MinError[T]) {
-		fn(w, e.Min)
-	})
-	return &rr
-}
-
-// Validate validates v. If v's type is not T, Validate panics.
-func (r *MinValidator[T]) Validate(v any) error {
-	n := v.(T)
-	if n < r.min {
-		return &MinError[T]{
-			Value: n,
+// Validate validates v.
+func (r *minValidator[T]) Validate(ctx context.Context, v T) error {
+	if v < r.min {
+		e := &minError[T]{
 			Min:   r.min,
-			rule:  r,
+			Value: v,
 		}
+		return errors.New(ctxPrint(ctx, e, r.key, r.args))
 	}
 	return nil
 }
 
-// MinError reports an error is caused in MinValidator.
-type MinError[T ordered] struct {
-	Value T
-	Min   T
-	rule  *MinValidator[T]
+// minError reports an error is caused in Min validator.
+type minError[T ordered] struct {
+	Min   T `arg:"min"`
+	Value T `arg:"value"`
 }
 
-// Error implements the error interface.
-func (e MinError[T]) Error() string {
-	p := e.rule.p
-	if p == nil {
-		p = &minErrorPrinter[T]{}
-	}
-	var w bytes.Buffer
-	p.Print(&w, &e)
-	return w.String()
-}
-
-type minErrorPrinter[T ordered] struct{}
-
-func (minErrorPrinter[T]) Print(w io.Writer, e *MinError[T]) {
-	fmt.Fprintf(w, "must be no less than %v", e.Min)
-}
-
-// MinErrorPrinter is the interface that wraps Print method.
-type MinErrorPrinter[T ordered] interface {
-	Printer[MinError[T]]
-}
-
-var _ typedValidator[
-	*MinValidator[int],
-	MinError[int],
-	MinErrorPrinter[int],
-] = (*MinValidator[int])(nil)
+var _ Validator[int] = (*minValidator[int])(nil)
 
 // Max returns the validator to verify the value is less or equal than n.
-func Max[T ordered](n T) *MaxValidator[T] {
-	var r MaxValidator[T]
-	r.max = n
-	return &r
+//
+// This validator has an arg in its reference key.
+//   - max: specified max value (type T)
+//   - value: user input (type T)
+func Max[T ordered](n T) Validator[T] {
+	return &maxValidator[T]{
+		max:  n,
+		key:  maxKey,
+		args: []Arg{ByName("max")},
+	}
 }
 
-// MaxValidator represents the validator to check the value is less or equal than T.
-type MaxValidator[T ordered] struct {
-	max T
-	p   MaxErrorPrinter[T]
+// maxValidator represents the validator to check the value is less or equal than T.
+type maxValidator[T ordered] struct {
+	max  T
+	key  message.Reference
+	args []Arg
 }
 
-// WithPrinter returns shallow copy of r with its Printer changed to p.
-func (r *MaxValidator[T]) WithPrinter(p MaxErrorPrinter[T]) *MaxValidator[T] {
+// WithReferenceKey returns shallow copy of r with its reference key changed to key.
+func (r *maxValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
-	rr.p = p
+	rr.key = key
+	rr.args = a
 	return &rr
 }
 
-// WithPrinterFunc returns shallow copy of r with its printer function changed to fn.
-func (r *MaxValidator[T]) WithPrinterFunc(fn func(w io.Writer, max T)) *MaxValidator[T] {
-	rr := *r
-	rr.p = makePrinterFunc(func(w io.Writer, e *MaxError[T]) {
-		fn(w, e.Max)
-	})
-	return &rr
-}
-
-// Validate validates v. If v's type is not T, Validate panics.
-func (r *MaxValidator[T]) Validate(v any) error {
-	n := v.(T)
-	if n > r.max {
-		return &MaxError[T]{
-			Value: n,
+// Validate validates v.
+func (r *maxValidator[T]) Validate(ctx context.Context, v T) error {
+	if v > r.max {
+		e := &maxError[T]{
+			Value: v,
 			Max:   r.max,
-			rule:  r,
 		}
+		return errors.New(ctxPrint(ctx, e, r.key, r.args))
 	}
 	return nil
 }
 
-// MaxError reports an error is caused in MaxValidator.
-type MaxError[T ordered] struct {
-	Value T
-	Max   T
-	rule  *MaxValidator[T]
+// maxError reports an error is caused in Max validator.
+type maxError[T ordered] struct {
+	Max   T `arg:"max"`
+	Value T `arg:"value"`
 }
 
-// Error implements the error interface.
-func (e MaxError[T]) Error() string {
-	p := e.rule.p
-	if p == nil {
-		p = &maxErrorPrinter[T]{}
-	}
-	var w bytes.Buffer
-	p.Print(&w, &e)
-	return w.String()
-}
-
-type maxErrorPrinter[T ordered] struct{}
-
-func (maxErrorPrinter[T]) Print(w io.Writer, e *MaxError[T]) {
-	fmt.Fprintf(w, "must be no greater than %v", e.Max)
-}
-
-// MaxErrorPrinter is the interface that wraps Print method.
-type MaxErrorPrinter[T ordered] interface {
-	Printer[MaxError[T]]
-}
-
-var _ typedValidator[
-	*MaxValidator[int],
-	MaxError[int],
-	MaxErrorPrinter[int],
-] = (*MaxValidator[int])(nil)
+var _ Validator[int] = (*maxValidator[int])(nil)
 
 // InRange returns the validator to verify the value is within min and max.
-func InRange[T ordered](min, max T) *InRangeValidator[T] {
-	var r InRangeValidator[T]
-	r.min = min
-	r.max = max
-	return &r
+//
+// This validator has two args in its reference key.
+//   - min: specified min value (type T)
+//   - max: specified max value (type T)
+//   - value: user input (type T)
+func InRange[T ordered](min, max T) Validator[T] {
+	return &inRangeValidator[T]{
+		min:  min,
+		max:  max,
+		key:  inRangeKey,
+		args: []Arg{ByName("min"), ByName("max")},
+	}
 }
 
-// InRangeValidator represents the validator to check the value is within T.
-type InRangeValidator[T ordered] struct {
-	min, max T
-	p        InRangeErrorPrinter[T]
+// inRangeValidator represents the validator to check the value is within T.
+type inRangeValidator[T ordered] struct {
+	min  T
+	max  T
+	key  message.Reference
+	args []Arg
 }
 
-// WithPrinter returns shallow copy of r with its Printer changed to p.
-func (r *InRangeValidator[T]) WithPrinter(p InRangeErrorPrinter[T]) *InRangeValidator[T] {
+// WithReferenceKey returns shallow copy of r with its reference key changed to key.
+func (r *inRangeValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
-	rr.p = p
+	rr.key = key
+	rr.args = a
 	return &rr
 }
 
-// WithPrinterFunc returns shallow copy of r with its printer function changed to fn.
-func (r *InRangeValidator[T]) WithPrinterFunc(fn func(w io.Writer, min, max T)) *InRangeValidator[T] {
-	rr := *r
-	rr.p = makePrinterFunc(func(w io.Writer, e *InRangeError[T]) {
-		fn(w, e.Min, e.Max)
-	})
-	return &rr
-}
-
-// Validate validates v. If v's type is not T, Validate panics.
-func (r *InRangeValidator[T]) Validate(v any) error {
-	n := v.(T)
-	if n < r.min || n > r.max {
-		return &InRangeError[T]{
-			Value: n,
+// Validate validates v.
+func (r *inRangeValidator[T]) Validate(ctx context.Context, v T) error {
+	if v < r.min || v > r.max {
+		e := &inRangeError[T]{
 			Min:   r.min,
 			Max:   r.max,
-			rule:  r,
+			Value: v,
 		}
+		return errors.New(ctxPrint(ctx, e, r.key, r.args))
 	}
 	return nil
 }
 
-// InRangeError reports an error is caused in InRangeValidator.
-type InRangeError[T ordered] struct {
-	Value    T
-	Min, Max T
-	rule     *InRangeValidator[T]
+// inRangeError reports an error is caused in InRange validator.
+type inRangeError[T ordered] struct {
+	Min   T `arg:"min"`
+	Max   T `arg:"max"`
+	Value T `arg:"value"`
 }
 
-// Error implements the error interface.
-func (e InRangeError[T]) Error() string {
-	p := e.rule.p
-	if p == nil {
-		p = &inRangeErrorPrinter[T]{}
-	}
-	var w bytes.Buffer
-	p.Print(&w, &e)
-	return w.String()
-}
-
-type inRangeErrorPrinter[T ordered] struct{}
-
-func (inRangeErrorPrinter[T]) Print(w io.Writer, e *InRangeError[T]) {
-	fmt.Fprintf(w, "must be in range(%v ... %v)", e.Min, e.Max)
-}
-
-// InRangeErrorPrinter is the interface that wraps Print method.
-type InRangeErrorPrinter[T ordered] interface {
-	Printer[InRangeError[T]]
-}
-
-var _ typedValidator[
-	*InRangeValidator[int],
-	InRangeError[int],
-	InRangeErrorPrinter[int],
-] = (*InRangeValidator[int])(nil)
+var _ Validator[int] = (*inRangeValidator[int])(nil)

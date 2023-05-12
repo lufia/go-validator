@@ -1,80 +1,59 @@
 package validator
 
 import (
-	"bytes"
-	"fmt"
-	"io"
+	"context"
+	"errors"
+
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
+const requiredKey = "cannot be the zero value"
+
+func init() {
+	DefaultCatalog.SetString(language.English, requiredKey, "cannot be the zero value")
+	DefaultCatalog.SetString(language.Japanese, requiredKey, "必須です")
+}
+
 // Required returns the validator to verify the value is not zero value.
-func Required[T comparable]() *RequiredValidator[T] {
-	return &RequiredValidator[T]{}
+//
+// This validator has an args in its reference key.
+//   - value: user input (type T)
+func Required[T comparable]() Validator[T] {
+	return &requiredValidator[T]{
+		key: requiredKey,
+	}
 }
 
-// RequiredValidator represents the validator to check the value is not zero-value.
-type RequiredValidator[T comparable] struct {
-	p RequiredErrorPrinter[T]
+// requiredValidator represents the validator to check the value is not zero-value.
+type requiredValidator[T comparable] struct {
+	key  message.Reference
+	args []Arg
 }
 
-// WithPrinter returns shallow copy of r with its Printer changed to p.
-func (r *RequiredValidator[T]) WithPrinter(p RequiredErrorPrinter[T]) *RequiredValidator[T] {
+// WithReferenceKey returns shallow copy of r with its reference key changed to key.
+func (r *requiredValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
-	rr.p = p
+	rr.key = key
+	rr.args = a
 	return &rr
 }
 
-// WithPrinterFunc returns shallow copy of r with its printer function changed to fn.
-func (r *RequiredValidator[T]) WithPrinterFunc(fn func(w io.Writer)) *RequiredValidator[T] {
-	rr := *r
-	rr.p = makePrinterFunc(func(w io.Writer, _ *RequiredError[T]) {
-		fn(w)
-	})
-	return &rr
-}
-
-// Validate validates v. If v's type is not T, Validate panics.
-func (r *RequiredValidator[T]) Validate(v any) error {
-	s := v.(T)
+// Validate validates v.
+func (r *requiredValidator[T]) Validate(ctx context.Context, v T) error {
 	var v0 T
-	if s == v0 {
-		return &RequiredError[T]{
-			Value: s,
-			rule:  r,
+	if v == v0 {
+		e := &requiredError[T]{
+			Value: v,
 		}
+		return errors.New(ctxPrint(ctx, e, r.key, r.args))
 	}
 	return nil
 }
 
-// RequiredError reports an error is caused in RequiredValidator.
-type RequiredError[T comparable] struct {
-	Value T
-	rule  *RequiredValidator[T]
+// requiredError reports an error is caused in Required validator.
+type requiredError[T comparable] struct {
+	Value T `arg:"value"`
 }
 
-// Error implements the error interface.
-func (e RequiredError[T]) Error() string {
-	p := e.rule.p
-	if p == nil {
-		p = &requiredErrorPrinter[T]{}
-	}
-	var w bytes.Buffer
-	p.Print(&w, &e)
-	return w.String()
-}
-
-type requiredErrorPrinter[T comparable] struct{}
-
-func (requiredErrorPrinter[T]) Print(w io.Writer, e *RequiredError[T]) {
-	fmt.Fprintf(w, "cannot be the zero value")
-}
-
-// RequiredErrorPrinter is the interface that wraps Print method.
-type RequiredErrorPrinter[T comparable] interface {
-	Printer[RequiredError[T]]
-}
-
-var _ typedValidator[
-	*RequiredValidator[string],
-	RequiredError[string],
-	RequiredErrorPrinter[string],
-] = (*RequiredValidator[string])(nil)
+var _ Validator[string] = (*requiredValidator[string])(nil)
