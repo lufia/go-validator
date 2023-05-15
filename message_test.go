@@ -1,8 +1,8 @@
 package validator_test
 
 import (
+	"context"
 	"fmt"
-	"io"
 
 	"github.com/lufia/go-validator"
 )
@@ -12,15 +12,13 @@ func Example_customMessage() {
 		Num  int
 		Name string
 	}
-	v := validator.Struct(func(s validator.StructRuleAdder, r *Data) {
-		s.Add(
-			validator.Field(&r.Name, "name"),
-			validator.Length[string](3, 100).WithPrinterFunc(func(w io.Writer, min, max int) {
-				fmt.Fprintf(w, "must be of length %d to %d", min, max)
-			}),
-		)
+	v := validator.Struct(func(s validator.StructFieldAdder, r *Data) {
+		s.Add(validator.Field(&r.Name, "name",
+			validator.Length[string](3, 100).WithReferenceKey("must be of length %d to %d", validator.ByName("min"), validator.ByName("max")),
+		))
 	})
-	err := v.Validate(&Data{
+	ctx := validator.WithPrinter(context.Background(), nil)
+	err := v.Validate(ctx, Data{
 		Num:  10,
 		Name: "xx",
 	})

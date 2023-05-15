@@ -1,11 +1,13 @@
 package validator_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/lufia/go-validator"
+	"golang.org/x/text/message"
 )
 
 type CreateUserRequest struct {
@@ -16,10 +18,9 @@ type CreateUserRequest struct {
 
 type UsernameValidator struct{}
 
-func (*UsernameValidator) Validate(v any) error {
-	s := v.(string)
+func (*UsernameValidator) Validate(ctx context.Context, v string) error {
 	// find non-alnum or non-ascii character
-	i := strings.IndexFunc(s, func(c rune) bool {
+	i := strings.IndexFunc(v, func(c rune) bool {
 		switch {
 		default:
 			return true
@@ -37,37 +38,48 @@ func (*UsernameValidator) Validate(v any) error {
 	return nil
 }
 
+func (r *UsernameValidator) WithReferenceKey(key message.Reference, a ...validator.Arg) validator.Validator[string] {
+	rr := *r
+	return &rr
+}
+
 type CreateUserRequestValidator struct{}
 
-func (*CreateUserRequestValidator) Validate(v any) error {
-	u := v.(*CreateUserRequest)
-	if u.Password != u.ConfirmationPassword {
+func (*CreateUserRequestValidator) Validate(ctx context.Context, v CreateUserRequest) error {
+	if v.Password != v.ConfirmationPassword {
 		return errors.New("passwords does not match")
 	}
 	return nil
 }
 
+func (r *CreateUserRequestValidator) WithReferenceKey(key message.Reference, a ...validator.Arg) validator.Validator[CreateUserRequest] {
+	rr := *r
+	return &rr
+}
+
 var createUserRequestValidator = validator.Join(
-	validator.Struct(func(s validator.StructRuleAdder, r *CreateUserRequest) {
+	validator.Struct(func(s validator.StructFieldAdder, r *CreateUserRequest) {
 		s.Add(
-			validator.Field(&r.Name, "name"),
-			validator.Length[string](5, 20),
-			&UsernameValidator{},
+			validator.Field(&r.Name, "name",
+				validator.Length[string](5, 20),
+				validator.Validator[string](&UsernameValidator{}),
+			),
 		)
 		s.Add(
-			validator.Field(&r.Password, "password"),
-			validator.MinLength[string](8),
+			validator.Field(&r.Password, "password", validator.MinLength[string](8)),
 		)
 		s.Add(
-			validator.Field(&r.ConfirmationPassword, "confirmation-password"),
-			validator.MinLength[string](8),
+			validator.Field(&r.ConfirmationPassword, "confirmation-password",
+				validator.MinLength[string](8),
+			),
 		)
 	}),
-	&CreateUserRequestValidator{},
+	validator.Validator[CreateUserRequest](&CreateUserRequestValidator{}),
 )
 
 func Example_customValidator() {
-	err := createUserRequestValidator.Validate(&CreateUserRequest{
+	ctx := context.Background()
+	err := createUserRequestValidator.Validate(ctx, CreateUserRequest{
 		Name:                 ".adm",
 		Password:             "1234",
 		ConfirmationPassword: "abcd",

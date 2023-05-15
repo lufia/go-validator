@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"context"
 	"testing"
 
 	"golang.org/x/exp/slices"
@@ -17,11 +18,11 @@ func TestStruct(t *testing.T) {
 			Type int
 		}
 	)
-	v := Struct(func(s StructRuleAdder, r *Request) {
+	v := Struct(func(s StructFieldAdder, r *Request) {
 		s.Add(Field(&r.Name, "name"))
 	})
 	var r Request
-	if err := v.Validate(&r); err != nil {
+	if err := v.Validate(context.Background(), r); err != nil {
 		t.Errorf("Validate(%#v): %v", r, err)
 	}
 }
@@ -35,11 +36,11 @@ func TestStruct_reusingValidator(t *testing.T) {
 	)
 	var r Request
 	stringValidator := Required[string]()
-	v := Struct(func(s StructRuleAdder, r *Request) {
-		s.Add(Field(&r.Name, "name"), stringValidator)
-		s.Add(Field(&r.Key, "key"), stringValidator)
+	v := Struct(func(s StructFieldAdder, r *Request) {
+		s.Add(Field(&r.Name, "name", stringValidator))
+		s.Add(Field(&r.Key, "key", stringValidator))
 	})
-	err := v.Validate(&r)
+	err := v.Validate(context.Background(), r)
 	testErrors[Request](t, err, []string{
 		"name: cannot be the zero value",
 		"key: cannot be the zero value",
@@ -52,7 +53,7 @@ func testErrors[T any](t *testing.T, err error, want []string) {
 		t.Errorf("got <nil>; want %#v", want)
 		return
 	}
-	errs := err.(*StructRuleError[T]).Errors
+	errs := err.(*StructError[T]).Errors
 	e := make([]string, 0, len(errs))
 	for _, err := range errs {
 		e = append(e, err.Error())

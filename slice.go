@@ -1,47 +1,41 @@
 package validator
 
 import (
-	"bytes"
-	"fmt"
-	"io"
+	"context"
+
+	"golang.org/x/text/message"
 )
 
-func Slice[T any](vs ...Validator) *SliceValidator[T] {
-	var r SliceValidator[T]
-	r.vs = vs
-	return &r
+type slice[T any] interface {
+	[]T
 }
 
-// SliceValidator represents the validator to check slice elements.
-type SliceValidator[T any] struct {
-	vs []Validator
-	p  SliceErrorPrinter[T]
+func Slice[T any](vs ...Validator[T]) Validator[[]T] {
+	return &sliceValidator[[]T, T]{
+		vs: vs,
+	}
 }
 
-// WithPrinter returns shallow copy of r with its Printer changed to p.
-func (r *SliceValidator[T]) WithPrinter(p SliceErrorPrinter[T]) *SliceValidator[T] {
+// sliceValidator represents the validator to check slice elements.
+type sliceValidator[S slice[T], T any] struct {
+	vs []Validator[T]
+}
+
+// WithReferenceKey returns shallow copy of r with its reference key changed to key.
+//
+// TODO(lufia): currently key is always ignored.
+func (r *sliceValidator[S, T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[S] {
 	rr := *r
-	rr.p = p
 	return &rr
 }
 
-// WithPrinterFunc returns shallow copy of r with its printer function changed to fn.
-func (r *SliceValidator[T]) WithPrinterFunc(fn func(w io.Writer)) *SliceValidator[T] {
-	rr := *r
-	rr.p = makePrinterFunc(func(w io.Writer, e *SliceError[T]) {
-		fn(w)
-	})
-	return &rr
-}
-
-// Validate validates v. If v's type is not []T, Validate panics.
-func (r *SliceValidator[T]) Validate(v any) error {
-	a := v.([]T)
+// Validate validates v.
+func (r *sliceValidator[S, T]) Validate(ctx context.Context, v S) error {
 	var m OrderedMap[int, error]
-	for i, elem := range a {
+	for i, elem := range v {
 		var errs []error
 		for _, rule := range r.vs {
-			if err := rule.Validate(elem); err != nil {
+			if err := rule.Validate(ctx, elem); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -50,35 +44,27 @@ func (r *SliceValidator[T]) Validate(v any) error {
 		}
 	}
 	if m.Len() > 0 {
-		return &SliceError[T]{
-			Value:  a,
+		return &SliceError[S, T]{
+			Value:  v,
 			Errors: &m,
-			rule:   r,
 		}
 	}
 	return nil
 }
 
-// SliceError reports an error is caused in SliceValidator.
-type SliceError[T any] struct {
-	Value  []T
+// SliceError reports an error is caused in Slice validator.
+type SliceError[S slice[T], T any] struct {
+	Value  S
 	Errors *OrderedMap[int, error]
-	rule   *SliceValidator[T]
 }
 
 // Error implements the error interface.
-func (e SliceError[T]) Error() string {
-	p := e.rule.p
-	if p == nil {
-		p = &sliceErrorPrinter[T]{}
-	}
-	var w bytes.Buffer
-	p.Print(&w, &e)
-	return w.String()
+func (e SliceError[S, T]) Error() string {
+	return joinErrors(e.Unwrap()...).Error()
 }
 
 // Unwrap returns each errors of err.
-func (e SliceError[T]) Unwrap() []error {
+func (e SliceError[S, T]) Unwrap() []error {
 	n := e.Errors.Len()
 	if n == 0 {
 		return nil
@@ -91,27 +77,7 @@ func (e SliceError[T]) Unwrap() []error {
 	return errs
 }
 
-type sliceErrorPrinter[T any] struct{}
-
-func (sliceErrorPrinter[T]) Print(w io.Writer, e *SliceError[T]) {
-	i := 0
-	for _, key := range e.Errors.Keys() {
-		if i > 0 {
-			w.Write([]byte("\n"))
-		}
-		err, _ := e.Errors.Get(key)
-		fmt.Fprint(w, err)
-		i++
-	}
-}
-
-// SliceErrorPrinter is the interface that wraps Print method.
-type SliceErrorPrinter[T any] interface {
-	Printer[SliceError[T]]
-}
-
-var _ typedValidator[
-	*SliceValidator[any],
-	SliceError[any],
-	SliceErrorPrinter[any],
-] = (*SliceValidator[any])(nil)
+var (
+	_ Validator[[]any] = (*sliceValidator[[]any, any])(nil)
+	_ Error            = (*SliceError[[]any, any])(nil)
+)

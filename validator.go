@@ -2,12 +2,15 @@
 package validator
 
 import (
-	"io"
+	"context"
+
+	"golang.org/x/text/message"
 )
 
 // Validator is the interface that wraps the basic Validate method.
-type Validator interface {
-	Validate(v any) error
+type Validator[T any] interface {
+	Validate(ctx context.Context, v T) error
+	WithReferenceKey(key message.Reference, a ...Arg) Validator[T]
 }
 
 // Error is the interface that wraps Error method.
@@ -15,57 +18,43 @@ type Error interface {
 	error
 }
 
-// Printer is the interface that wraps Print method.
-type Printer[E Error] interface {
-	Print(w io.Writer, e *E)
-}
-
-type printerFunc[E Error] func(w io.Writer, e *E)
-
-func makePrinterFunc[E Error](fn func(w io.Writer, e *E)) printerFunc[E] {
-	return printerFunc[E](fn)
-}
-
-func (p printerFunc[E]) Print(w io.Writer, e *E) {
-	p(w, e)
-}
-
-var _ Printer[RequiredError[string]] = (printerFunc[RequiredError[string]])(nil)
-
 // Join bundles vs to a validator.
-func Join(vs ...Validator) Validator {
-	var a []Validator
+func Join[T any](vs ...Validator[T]) Validator[T] {
+	var a []Validator[T]
 	for _, v := range vs {
-		if p, ok := v.(*joinValidator); ok {
+		if p, ok := v.(*joinValidator[T]); ok {
 			a = append(a, p.vs...)
 		} else {
 			a = append(a, v)
 		}
 	}
-	return &joinValidator{vs: a}
+	return &joinValidator[T]{vs: a}
 }
 
-type joinValidator struct {
-	vs []Validator
+type joinValidator[T any] struct {
+	vs []Validator[T]
+}
+
+// WithReferenceKey returns shallow copy of r with its reference key changed to key.
+//
+// TODO(lufia): currently key is always ignored.
+func (r *joinValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
+	rr := *r
+	return &rr
 }
 
 // Validate returns the all errors that v is validated with its each validator.
-func (r *joinValidator) Validate(v any) error {
+func (r *joinValidator[T]) Validate(ctx context.Context, v T) error {
 	var errs []error
 	for _, p := range r.vs {
-		if err := p.Validate(v); err != nil {
+		if err := p.Validate(ctx, v); err != nil {
 			errs = append(errs, err)
 		}
 	}
 	return joinErrors(errs...)
 }
 
-var _ Validator = (*joinValidator)(nil)
-
-type typedValidator[V Validator, E Error, P Printer[E]] interface {
-	Validator
-	WithPrinter(p P) V
-}
+var _ Validator[string] = (*joinValidator[string])(nil)
 
 // OrderedMap is a map that guarantee that the iteration order of entries
 // will be the order in which they were set.
