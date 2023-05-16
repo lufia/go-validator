@@ -21,6 +21,7 @@ Yet another validator written in Go.
 * **Min**: see **InRange**.
 * **Max**: see **InRange**.
 * **In**: validates comparable types if the value is in valid values.
+* **Pattern**: validates strings if it matches the regular expression.
 
 ## Supported languages
 

@@ -7,6 +7,7 @@ import (
 func init() {
 	DefaultCatalog.SetString(language.English, requiredErrorFormat.ID, "cannot be the zero value")
 	DefaultCatalog.SetString(language.English, inErrorFormat.ID, "must be a valid value in %[1]v")
+	DefaultCatalog.SetString(language.English, patternErrorFormat.ID, "must match the pattern /%[1]v/")
 
 	DefaultCatalog.SetString(language.English, minLengthErrorFormat.ID, "the length must be no less than %[1]d")
 	DefaultCatalog.SetString(language.English, maxLengthErrorFormat.ID, "the length must be no greater than %[1]d")

@@ -22,6 +22,7 @@ type errorFormat struct {
 var (
 	requiredErrorFormat = newFormat("cannot be the zero value")
 	inErrorFormat       = newFormat("must be a valid value in %[1]v", ByName("validValues"))
+	patternErrorFormat  = newFormat("must match the pattern /%[1]v/", ByName("pattern"))
 
 	minLengthErrorFormat = newFormat("the length must be no less than %[1]d", ByName("min"))
 	maxLengthErrorFormat = newFormat("the length must be no greater than %[1]d", ByName("max"))

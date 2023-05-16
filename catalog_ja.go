@@ -7,6 +7,7 @@ import (
 func init() {
 	DefaultCatalog.SetString(language.Japanese, requiredErrorFormat.ID, "必須です")
 	DefaultCatalog.SetString(language.Japanese, inErrorFormat.ID, "%[1]vのいずれかでなければなりません")
+	DefaultCatalog.SetString(language.Japanese, patternErrorFormat.ID, "%[1]vのパターンに一致しなければなりません")
 
 	DefaultCatalog.SetString(language.Japanese, minLengthErrorFormat.ID, "%[1]d文字以上の長さが必要です")
 	DefaultCatalog.SetString(language.Japanese, maxLengthErrorFormat.ID, "%[1]d文字以内の長さに制限されています")
