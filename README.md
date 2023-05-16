@@ -5,9 +5,11 @@ Yet another validator written in Go.
 [![Actions Status][actions-image]][actions-url]
 [![Coverage Status][coveralls-image]][coveralls-url]
 
-## Description
+## Features
 
-TODO
+* strongly-typed validators by type parameters
+* i18n support
+* handling multiple validation errors
 
 ## Built-in validators
 
@@ -19,6 +21,50 @@ TODO
 * **Min**: see **InRange**.
 * **Max**: see **InRange**.
 * **In**: validates comparable types if the value is in valid values.
+
+## Supported languages
+
+* English
+* Japanese
+
+## Example
+
+```go
+import (
+	"context"
+	"fmt"
+
+	"github.com/lufia/go-validator"
+)
+
+type OIDCProvider int
+
+const (
+	Google OIDCProvider = iota + 1
+	Apple
+	GitHub
+)
+
+type CreateUserRequest struct {
+	Name     string
+	Provider OIDCProvider
+	Theme    string
+}
+
+var createUserRequestValidator = validator.Struct(func(s validator.StructRule, r *CreateUserRequest) {
+	validator.AddField(s, &r.Name, "name", validator.Length[string](5, 20))
+	validator.AddField(s, &r.Provider, "provider", validator.In(Google, Apple, GitHub))
+	validator.AddField(s, &r.Theme, "theme", validator.In("light", "dark"))
+})
+
+func main() {
+	var r CreateUserRequest
+	err := createUserRequestValidator.Validate(context.Background(), &r)
+	fmt.Println(err)
+}
+```
+
+For more details, see [the documentation][godev-url].
 
 [godev-image]: https://pkg.go.dev/badge/github.com/lufia/go-validator
 [godev-url]: https://pkg.go.dev/github.com/lufia/go-validator
