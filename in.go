@@ -5,42 +5,31 @@ import (
 	"errors"
 
 	"golang.org/x/exp/slices"
-	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
 
-const inKey = "must be a valid value in %v"
-
-func init() {
-	DefaultCatalog.SetString(language.English, inKey, "must be a valid value in %v")
-	DefaultCatalog.SetString(language.Japanese, inKey, "xxxx")
-}
-
 // In returns the validator to verify the value is in a.
 //
-// This validator has two args in its reference key.
+// Two named args are available in its error format.
 //   - validValues: specified valid values (type []T)
 //   - value: user input (type T)
 func In[T comparable](a ...T) Validator[T] {
 	return &inValidator[T]{
-		a:    a,
-		key:  inKey,
-		args: []Arg{ByName("validValues")},
+		a:      a,
+		format: inErrorFormat,
 	}
 }
 
 // inValidator represents the validator to check the value is in T.
 type inValidator[T comparable] struct {
-	a    []T
-	key  message.Reference
-	args []Arg
+	a      []T
+	format *errorFormat
 }
 
-// WithReferenceKey returns shallow copy of r with its reference key changed to key.
-func (r *inValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
+// WithFormat returns shallow copy of r with its error format changed to key.
+func (r *inValidator[T]) WithFormat(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
-	rr.key = key
-	rr.args = a
+	rr.format = &errorFormat{Key: key, Args: a}
 	return &rr
 }
 
@@ -51,7 +40,7 @@ func (r *inValidator[T]) Validate(ctx context.Context, v T) error {
 			Value:       v,
 			ValidValues: r.a,
 		}
-		return errors.New(ctxPrint(ctx, e, r.key, r.args))
+		return errors.New(ctxPrint(ctx, e, r.format.Key, r.format.Args))
 	}
 	return nil
 }

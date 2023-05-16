@@ -10,7 +10,7 @@ import (
 // Validator is the interface that wraps the basic Validate method.
 type Validator[T any] interface {
 	Validate(ctx context.Context, v T) error
-	WithReferenceKey(key message.Reference, a ...Arg) Validator[T]
+	WithFormat(key message.Reference, a ...Arg) Validator[T]
 }
 
 // Error is the interface that wraps Error method.
@@ -35,10 +35,10 @@ type joinValidator[T any] struct {
 	vs []Validator[T]
 }
 
-// WithReferenceKey returns shallow copy of r with its reference key changed to key.
+// WithFormat returns shallow copy of r with its error format changed to key.
 //
 // TODO(lufia): currently key is always ignored.
-func (r *joinValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
+func (r *joinValidator[T]) WithFormat(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
 	return &rr
 }

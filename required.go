@@ -4,38 +4,28 @@ import (
 	"context"
 	"errors"
 
-	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
 
-const requiredKey = "cannot be the zero value"
-
-func init() {
-	DefaultCatalog.SetString(language.English, requiredKey, "cannot be the zero value")
-	DefaultCatalog.SetString(language.Japanese, requiredKey, "必須です")
-}
-
 // Required returns the validator to verify the value is not zero value.
 //
-// This validator has an args in its reference key.
+// A named arg is available in its error format.
 //   - value: user input (type T)
 func Required[T comparable]() Validator[T] {
 	return &requiredValidator[T]{
-		key: requiredKey,
+		format: requiredErrorFormat,
 	}
 }
 
 // requiredValidator represents the validator to check the value is not zero-value.
 type requiredValidator[T comparable] struct {
-	key  message.Reference
-	args []Arg
+	format *errorFormat
 }
 
-// WithReferenceKey returns shallow copy of r with its reference key changed to key.
-func (r *requiredValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
+// WithFormat returns shallow copy of r with its error format changed to key.
+func (r *requiredValidator[T]) WithFormat(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
-	rr.key = key
-	rr.args = a
+	rr.format = &errorFormat{Key: key, Args: a}
 	return &rr
 }
 
@@ -46,7 +36,7 @@ func (r *requiredValidator[T]) Validate(ctx context.Context, v T) error {
 		e := &requiredError[T]{
 			Value: v,
 		}
-		return errors.New(ctxPrint(ctx, e, r.key, r.args))
+		return errors.New(ctxPrint(ctx, e, r.format.Key, r.format.Args))
 	}
 	return nil
 }

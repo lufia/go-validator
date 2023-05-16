@@ -18,9 +18,9 @@ func TestRequired(t *testing.T) {
 	})
 }
 
-func TestRequiredWithCustomReferenceKey(t *testing.T) {
+func TestRequiredWithFormat(t *testing.T) {
 	t.Run("string", func(t *testing.T) {
-		v := Required[string]().WithReferenceKey("is empty")
+		v := Required[string]().WithFormat("is empty")
 		testValidate(t, v, "", "is empty")
 	})
 }

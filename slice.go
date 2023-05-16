@@ -21,10 +21,10 @@ type sliceValidator[S slice[T], T any] struct {
 	vs []Validator[T]
 }
 
-// WithReferenceKey returns shallow copy of r with its reference key changed to key.
+// WithFormat returns shallow copy of r with its error format changed to key.
 //
 // TODO(lufia): currently key is always ignored.
-func (r *sliceValidator[S, T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[S] {
+func (r *sliceValidator[S, T]) WithFormat(key message.Reference, a ...Arg) Validator[S] {
 	rr := *r
 	return &rr
 }

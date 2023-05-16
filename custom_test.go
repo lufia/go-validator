@@ -38,48 +38,41 @@ func (*UsernameValidator) Validate(ctx context.Context, v string) error {
 	return nil
 }
 
-func (r *UsernameValidator) WithReferenceKey(key message.Reference, a ...validator.Arg) validator.Validator[string] {
+func (r *UsernameValidator) WithFormat(key message.Reference, a ...validator.Arg) validator.Validator[string] {
 	rr := *r
 	return &rr
 }
 
 type CreateUserRequestValidator struct{}
 
-func (*CreateUserRequestValidator) Validate(ctx context.Context, v CreateUserRequest) error {
+func (*CreateUserRequestValidator) Validate(ctx context.Context, v *CreateUserRequest) error {
 	if v.Password != v.ConfirmationPassword {
 		return errors.New("passwords does not match")
 	}
 	return nil
 }
 
-func (r *CreateUserRequestValidator) WithReferenceKey(key message.Reference, a ...validator.Arg) validator.Validator[CreateUserRequest] {
+func (r *CreateUserRequestValidator) WithFormat(key message.Reference, a ...validator.Arg) validator.Validator[*CreateUserRequest] {
 	rr := *r
 	return &rr
 }
 
 var createUserRequestValidator = validator.Join(
-	validator.Struct(func(s validator.StructFieldAdder, r *CreateUserRequest) {
-		s.Add(
-			validator.Field(&r.Name, "name",
-				validator.Length[string](5, 20),
-				validator.Validator[string](&UsernameValidator{}),
-			),
-		)
-		s.Add(
-			validator.Field(&r.Password, "password", validator.MinLength[string](8)),
-		)
-		s.Add(
-			validator.Field(&r.ConfirmationPassword, "confirmation-password",
-				validator.MinLength[string](8),
-			),
-		)
+	validator.Struct(func(s validator.StructRule, r *CreateUserRequest) {
+		validator.AddField(s, &r.Name, "name",
+			validator.Length[string](5, 20),
+			validator.Validator[string](&UsernameValidator{}))
+		validator.AddField(s, &r.Password, "password",
+			validator.MinLength[string](8))
+		validator.AddField(s, &r.ConfirmationPassword, "confirmation-password",
+			validator.MinLength[string](8))
 	}),
-	validator.Validator[CreateUserRequest](&CreateUserRequestValidator{}),
+	validator.Validator[*CreateUserRequest](&CreateUserRequestValidator{}),
 )
 
 func Example_customValidator() {
 	ctx := context.Background()
-	err := createUserRequestValidator.Validate(ctx, CreateUserRequest{
+	err := createUserRequestValidator.Validate(ctx, &CreateUserRequest{
 		Name:                 ".adm",
 		Password:             "1234",
 		ConfirmationPassword: "abcd",

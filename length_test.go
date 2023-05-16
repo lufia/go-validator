@@ -13,9 +13,9 @@ func TestMinLength(t *testing.T) {
 	})
 }
 
-func TestMinLengthWithCustomReferenceKey(t *testing.T) {
+func TestMinLengthWithFormat(t *testing.T) {
 	t.Run("string", func(t *testing.T) {
-		v := MinLength[string](3).WithReferenceKey("less than %v", ByName("min"))
+		v := MinLength[string](3).WithFormat("less than %v", ByName("min"))
 		testValidate(t, v, "ab", "less than 3")
 	})
 }
@@ -29,9 +29,9 @@ func TestMaxLength(t *testing.T) {
 	})
 }
 
-func TestMaxLengthWithCustomReferenceKey(t *testing.T) {
+func TestMaxLengthWithFormat(t *testing.T) {
 	t.Run("string", func(t *testing.T) {
-		v := MaxLength[string](3).WithReferenceKey("greater than %v", ByName("max"))
+		v := MaxLength[string](3).WithFormat("greater than %v", ByName("max"))
 		testValidate(t, v, "1234", "greater than 3")
 	})
 }
@@ -46,9 +46,9 @@ func TestLength(t *testing.T) {
 	})
 }
 
-func TestLengthWithCustomReferenceKey(t *testing.T) {
+func TestLengthWithFormat(t *testing.T) {
 	t.Run("string", func(t *testing.T) {
-		v := Length[string](1, 3).WithReferenceKey("out of range(%v, %v)", ByName("min"), ByName("max"))
+		v := Length[string](1, 3).WithFormat("out of range(%v, %v)", ByName("min"), ByName("max"))
 		testValidate(t, v, "1234", "out of range(1, 3)")
 	})
 }

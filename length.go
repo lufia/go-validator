@@ -4,52 +4,31 @@ import (
 	"context"
 	"errors"
 
-	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
 
-const (
-	minLengthKey = "the length must be no less than %v"
-	maxLengthKey = "the length must be no greater than %v"
-	lengthKey    = "the length must be in range(%v ... %v)"
-)
-
-func init() {
-	DefaultCatalog.SetString(language.English, minLengthKey, minLengthKey)
-	DefaultCatalog.SetString(language.Japanese, minLengthKey, "xxx")
-
-	DefaultCatalog.SetString(language.English, maxLengthKey, maxLengthKey)
-	DefaultCatalog.SetString(language.Japanese, maxLengthKey, "xxx")
-
-	DefaultCatalog.SetString(language.English, lengthKey, lengthKey)
-	DefaultCatalog.SetString(language.Japanese, lengthKey, "xxx")
-}
-
 // MinLength returns the validator to verify the length of the value is greater or equal than n.
 //
-// This validator has an arg in its reference key.
+// Two named args are available in its error format.
 //   - min: specified min value (type int)
 //   - value: user input (type T)
 func MinLength[T ~string](n int) Validator[T] {
 	return &minLengthValidator[T]{
-		min:  n,
-		key:  minLengthKey,
-		args: []Arg{ByName("min")},
+		min:    n,
+		format: minLengthErrorFormat,
 	}
 }
 
 // minLengthValidator represents the validator to check the length of the value is greater or equal than T.
 type minLengthValidator[T ~string] struct {
-	min  int
-	key  message.Reference
-	args []Arg
+	min    int
+	format *errorFormat
 }
 
-// WithReferenceKey returns shallow copy of r with its reference key changed to key.
-func (r *minLengthValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
+// WithFormat returns shallow copy of r with its error format changed to key.
+func (r *minLengthValidator[T]) WithFormat(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
-	rr.key = key
-	rr.args = a
+	rr.format = &errorFormat{Key: key, Args: a}
 	return &rr
 }
 
@@ -61,7 +40,7 @@ func (r *minLengthValidator[T]) Validate(ctx context.Context, v T) error {
 			Value: v,
 			Min:   r.min,
 		}
-		return errors.New(ctxPrint(ctx, e, r.key, r.args))
+		return errors.New(ctxPrint(ctx, e, r.format.Key, r.format.Args))
 	}
 	return nil
 }
@@ -76,29 +55,26 @@ var _ Validator[string] = (*minLengthValidator[string])(nil)
 
 // MaxLength returns the validator to verify the length of the value is less or equal than n.
 //
-// This validator has an arg in its reference key.
+// Two named args are available in its error format.
 //   - max: specified max value (type int)
 //   - value: user input (type T)
 func MaxLength[T ~string](n int) Validator[T] {
 	return &maxLengthValidator[T]{
-		max:  n,
-		key:  maxLengthKey,
-		args: []Arg{ByName("max")},
+		max:    n,
+		format: maxLengthErrorFormat,
 	}
 }
 
 // maxLengthValidator represents the validator to check the length of the value is less or equal than T.
 type maxLengthValidator[T ~string] struct {
-	max  int
-	key  message.Reference
-	args []Arg
+	max    int
+	format *errorFormat
 }
 
-// WithReferenceKey returns shallow copy of r with its reference key changed to key.
-func (r *maxLengthValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
+// WithFormat returns shallow copy of r with its error format changed to key.
+func (r *maxLengthValidator[T]) WithFormat(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
-	rr.key = key
-	rr.args = a
+	rr.format = &errorFormat{Key: key, Args: a}
 	return &rr
 }
 
@@ -110,7 +86,7 @@ func (r *maxLengthValidator[T]) Validate(ctx context.Context, v T) error {
 			Value: v,
 			Max:   r.max,
 		}
-		return errors.New(ctxPrint(ctx, e, r.key, r.args))
+		return errors.New(ctxPrint(ctx, e, r.format.Key, r.format.Args))
 	}
 	return nil
 }
@@ -125,32 +101,29 @@ var _ Validator[string] = (*maxLengthValidator[string])(nil)
 
 // Length returns the validator to verify the length of the value is within min and max.
 //
-// This validator has two args in its reference key.
+// Three named args are available in its error format.
 //   - min: specified min value (type int)
 //   - max: specified max value (type int)
 //   - value: user input (type T)
 func Length[T ~string](min, max int) Validator[T] {
 	return &lengthValidator[T]{
-		min:  min,
-		max:  max,
-		key:  lengthKey,
-		args: []Arg{ByName("min"), ByName("max")},
+		min:    min,
+		max:    max,
+		format: lengthErrorFormat,
 	}
 }
 
 // lengthValidator represents the validator to check the length of the value is within T.
 type lengthValidator[T ~string] struct {
-	min  int
-	max  int
-	key  message.Reference
-	args []Arg
+	min    int
+	max    int
+	format *errorFormat
 }
 
-// WithReferenceKey returns shallow copy of r with its reference key changed to key.
-func (r *lengthValidator[T]) WithReferenceKey(key message.Reference, a ...Arg) Validator[T] {
+// WithFormat returns shallow copy of r with its error format changed to key.
+func (r *lengthValidator[T]) WithFormat(key message.Reference, a ...Arg) Validator[T] {
 	rr := *r
-	rr.key = key
-	rr.args = a
+	rr.format = &errorFormat{Key: key, Args: a}
 	return &rr
 }
 
@@ -163,7 +136,7 @@ func (r *lengthValidator[T]) Validate(ctx context.Context, v T) error {
 			Max:   r.max,
 			Value: v,
 		}
-		return errors.New(ctxPrint(ctx, e, r.key, r.args))
+		return errors.New(ctxPrint(ctx, e, r.format.Key, r.format.Args))
 	}
 	return nil
 }
