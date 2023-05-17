@@ -1,4 +1,43 @@
-// Package validator provides utilities for validating any types.
+/*
+Package validator enables strongly-typed Validate methods to validate any types.
+
+# Builtin Validators
+
+There are builtin validators.
+  - In
+  - InRange
+  - Length
+  - Max
+  - MaxLength
+  - Min
+  - MinLength
+  - Pattern
+  - Required
+
+Also there are few composition validators.
+  - Join
+  - Slice
+  - Struct
+
+# Error message
+
+The builtin- and compositon-validators has default error messages.
+Additionally these validators provides to modify its each default message to appropriate message on the situation. For example:
+
+  v := validator.Min(3).WithFormat("%[1]v is not valid", validator.ByName("value"))
+
+It is different for each the validator to be available argument names with ByName.
+See each the validator documentation.
+
+# Internationalization
+
+The validators error messages are available in multiple languages.
+
+The validator package assumes English is default language.
+To switch default language to another one,
+it is set Printer provided by [golang.org/x/text/message] to ctx that
+will be passed to the first argument of Validate[T] method.
+*/
 package validator
 
 import (

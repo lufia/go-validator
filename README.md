@@ -8,7 +8,7 @@ Yet another validator written in Go.
 ## Features
 
 * strongly-typed validators by type parameters
-* i18n support
+* i18n support in the standard way
 * handling multiple validation errors
 
 ## Built-in validators
