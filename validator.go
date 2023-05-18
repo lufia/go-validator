@@ -24,7 +24,7 @@ Also there are few composition validators.
 The builtin- and compositon-validators has default error messages.
 Additionally these validators provides to modify its each default message to appropriate message on the situation. For example:
 
-  v := validator.Min(3).WithFormat("%[1]v is not valid", validator.ByName("value"))
+	v := validator.Min(3).WithFormat("%[1]v is not valid", validator.ByName("value"))
 
 It is different for each the validator to be available argument names with ByName.
 See each the validator documentation.

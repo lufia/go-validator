@@ -27,7 +27,7 @@ func Example() {
 			validator.AddField(s, &u.Name, "name", validator.Required[string]())
 		}))
 		validator.AddField(s, &r.Options, "options",
-			validator.Slice[string](validator.In("option1", "option2")))
+			validator.Slice(validator.In("option1", "option2")))
 	})
 
 	var r Request
@@ -58,7 +58,7 @@ func Example_localized() {
 			validator.AddField(s, &u.Name, "name", validator.Required[string]())
 		}))
 		validator.AddField(s, &r.Options, "options",
-			validator.Slice[string](validator.In("option1", "option2")))
+			validator.Slice(validator.In("option1", "option2")))
 	})
 
 	p := message.NewPrinter(language.Japanese, message.Catalog(validator.DefaultCatalog))
@@ -93,7 +93,7 @@ func Example_separated() {
 		})
 		requestValidator = validator.Struct(func(s validator.StructRule, r *Request) {
 			validator.AddField(s, &r.User, "user", userValidator)
-			validator.AddField(s, &r.Options, "options", validator.Slice[string](
+			validator.AddField(s, &r.Options, "options", validator.Slice(
 				validator.In("option1", "option2"),
 			))
 			validator.AddField(s, &r.Options, "options", validator.Slice(
