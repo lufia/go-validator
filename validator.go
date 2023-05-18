@@ -14,15 +14,48 @@ There are builtin validators.
   - Pattern
   - Required
 
+When these builtin validators detects the value is invalid,
+they returns just an error corresponding to the validator.
+In other words, they don't return multiple errors wrapped by errors.Join.
+
 Also there are few composition validators.
   - Join
   - Slice
   - Struct
 
+These validators wraps multiple validators (including composition validators itself),
+so it could be contained multiple errors to a returned error from them.
+
+To get the details:
+
+	// Join validator
+	err := validator.Join(validator.Min(3)).Validate(context.Background(), 2)
+	if e, ok := err.(interface{ Unwrap() []error }); ok {
+		fmt.Println(e.Unwrap())
+	}
+
+	// Slice validator
+	v := validator.Slice(validator.Min(3))
+	err := v.Validate(context.Background(), []int{3, 2, 1})
+	if e, ok := err.(*validator.SliceError[[]int, int]); ok {
+		fmt.Println(e.Errors)
+	}
+
+	// Struct validator
+	v := validator.Struct(func(s validator.StructRule, r *Data) {
+		// ...
+	})
+	err := v.Validate(context.Background(), &Data{})
+	if e, ok := err.(*validator.StructError[*Data, Data]); ok {
+		fmt.Println(e.Errors)
+	}
+
 # Error message
 
 The builtin- and compositon-validators has default error messages.
-Additionally these validators provides to modify its each default message to appropriate message on the situation. For example:
+Additionally these validators provides to modify its each default message to appropriate message on the situation.
+
+For example:
 
 	v := validator.Min(3).WithFormat("%[1]v is not valid", validator.ByName("value"))
 
