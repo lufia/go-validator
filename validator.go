@@ -50,6 +50,13 @@ To get the details:
 		fmt.Println(e.Errors)
 	}
 
+# Custom validator
+
+The New utility function makes it easy to implement custom validators.
+
+We highly recommend to set custom error message with WithFormat to that validator.
+It also has default error message but it might be a unsufficient to your users.
+
 # Error message
 
 The builtin- and compositon-validators has default error messages.
@@ -75,6 +82,7 @@ package validator
 
 import (
 	"context"
+	"errors"
 
 	"golang.org/x/text/message"
 )
@@ -160,3 +168,44 @@ func (m *OrderedMap[K, V]) Get(key K) (V, bool) {
 	v, ok := m.values[key]
 	return v, ok
 }
+
+// New returns the validator to verify the value with fn.
+// If fn returns false, the validator results as error.
+//
+// A named args is available in its error format.
+//   - value: user input (type T)
+func New[T any](fn func(v T) bool) Validator[T] {
+	return &customValidator[T]{
+		fn:     fn,
+		format: customErrorFormat,
+	}
+}
+
+type customValidator[T any] struct {
+	fn     func(v T) bool
+	format *errorFormat
+}
+
+// WithFormat returns shallow copy of r with its error format changed to key.
+func (r *customValidator[T]) WithFormat(key message.Reference, a ...Arg) Validator[T] {
+	rr := *r
+	rr.format = &errorFormat{Key: key, Args: a}
+	return &rr
+}
+
+// Validate returns the all errors that v is validated with its each validator.
+func (r *customValidator[T]) Validate(ctx context.Context, v T) error {
+	if !r.fn(v) {
+		e := &customError[T]{
+			Value: v,
+		}
+		return errors.New(ctxPrint(ctx, e, r.format.Key, r.format.Args))
+	}
+	return nil
+}
+
+type customError[T any] struct {
+	Value T `arg:"value"`
+}
+
+var _ Validator[string] = (*customValidator[string])(nil)

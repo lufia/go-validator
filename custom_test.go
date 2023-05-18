@@ -2,12 +2,10 @@ package validator_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/lufia/go-validator"
-	"golang.org/x/text/message"
 )
 
 type CreateUserRequest struct {
@@ -16,58 +14,40 @@ type CreateUserRequest struct {
 	ConfirmationPassword string
 }
 
-type UsernameValidator struct{}
+var (
+	usernameValidator = validator.New(func(v string) bool {
+		// find non-alnum or non-ascii character
+		i := strings.IndexFunc(v, func(c rune) bool {
+			switch {
+			default:
+				return true
+			case c >= 'a' && c <= 'z':
+				return false
+			case c >= 'A' && c <= 'Z':
+				return false
+			case c >= '0' && c <= '9':
+				return false
+			}
+		})
+		return i < 0
+	}).WithFormat("does not allow not-alphabets or not-digits")
 
-func (*UsernameValidator) Validate(ctx context.Context, v string) error {
-	// find non-alnum or non-ascii character
-	i := strings.IndexFunc(v, func(c rune) bool {
-		switch {
-		default:
-			return true
-		case c >= 'a' && c <= 'z':
-			return false
-		case c >= 'A' && c <= 'Z':
-			return false
-		case c >= '0' && c <= '9':
-			return false
-		}
-	})
-	if i >= 0 {
-		return errors.New("does not allow not-alphabets or not-digits")
-	}
-	return nil
-}
-
-func (r *UsernameValidator) WithFormat(key message.Reference, a ...validator.Arg) validator.Validator[string] {
-	rr := *r
-	return &rr
-}
-
-type CreateUserRequestValidator struct{}
-
-func (*CreateUserRequestValidator) Validate(ctx context.Context, v *CreateUserRequest) error {
-	if v.Password != v.ConfirmationPassword {
-		return errors.New("passwords does not match")
-	}
-	return nil
-}
-
-func (r *CreateUserRequestValidator) WithFormat(key message.Reference, a ...validator.Arg) validator.Validator[*CreateUserRequest] {
-	rr := *r
-	return &rr
-}
+	passwordValidator = validator.New(func(r *CreateUserRequest) bool {
+		return r.Password == r.ConfirmationPassword
+	}).WithFormat("passwords does not match")
+)
 
 var createUserRequestValidator = validator.Join(
 	validator.Struct(func(s validator.StructRule, r *CreateUserRequest) {
 		validator.AddField(s, &r.Name, "name",
 			validator.Length[string](5, 20),
-			validator.Validator[string](&UsernameValidator{}))
+			usernameValidator)
 		validator.AddField(s, &r.Password, "password",
 			validator.MinLength[string](8))
 		validator.AddField(s, &r.ConfirmationPassword, "confirmation-password",
 			validator.MinLength[string](8))
 	}),
-	validator.Validator[*CreateUserRequest](&CreateUserRequestValidator{}),
+	passwordValidator,
 )
 
 func Example_customValidator() {

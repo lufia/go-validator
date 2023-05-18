@@ -84,3 +84,24 @@ func TestOrderedMap(t *testing.T) {
 		})
 	}
 }
+
+func TestNew(t *testing.T) {
+	t.Run("string", func(t *testing.T) {
+		v := New(func(s string) bool { return s != "" })
+		testValidate(t, v, "a", "")
+		testValidate(t, v, "ab", "")
+		testValidate(t, v, "", "must be a valid value")
+	})
+	t.Run("int", func(t *testing.T) {
+		v := New(func(n int) bool { return n >= 0 })
+		testValidate(t, v, 1, "")
+		testValidate(t, v, -1, "must be a valid value")
+	})
+}
+
+func TestNewWithFormat(t *testing.T) {
+	t.Run("string", func(t *testing.T) {
+		v := New(func(s string) bool { return s != "" }).WithFormat("is empty")
+		testValidate(t, v, "", "is empty")
+	})
+}
