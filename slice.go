@@ -6,10 +6,6 @@ import (
 	"golang.org/x/text/message"
 )
 
-type slice[T any] interface {
-	[]T
-}
-
 func Slice[T any](vs ...Validator[T]) Validator[[]T] {
 	return &sliceValidator[[]T, T]{
 		vs: vs,
@@ -17,7 +13,7 @@ func Slice[T any](vs ...Validator[T]) Validator[[]T] {
 }
 
 // sliceValidator represents the validator to check slice elements.
-type sliceValidator[S slice[T], T any] struct {
+type sliceValidator[S ~[]T, T any] struct {
 	vs []Validator[T]
 }
 
@@ -53,7 +49,7 @@ func (r *sliceValidator[S, T]) Validate(ctx context.Context, v S) error {
 }
 
 // SliceError reports an error is caused in Slice validator.
-type SliceError[S slice[T], T any] struct {
+type SliceError[S ~[]T, T any] struct {
 	Value  S
 	Errors *OrderedMap[int, error]
 }

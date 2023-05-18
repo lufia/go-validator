@@ -8,17 +8,13 @@ import (
 	"golang.org/x/text/message"
 )
 
-type pointer[T any] interface {
-	*T
-}
-
 // Struct returns the validator to verify that the struct satisfies rules constrated with build.
 //
 // Three named args are available in its error format.
 //   - name: the registered field name (type string)
 //   - value: user input
 //   - error: occurred validation error(s) (type error)
-func Struct[P pointer[T], T any](build func(s StructRule, p P)) Validator[P] {
+func Struct[P ~*T, T any](build func(s StructRule, p P)) Validator[P] {
 	var (
 		s structValidator[P, T]
 		v T
@@ -34,7 +30,7 @@ func Struct[P pointer[T], T any](build func(s StructRule, p P)) Validator[P] {
 }
 
 // structValidator represents the validator to check the struct satisfies its rules.
-type structValidator[P pointer[T], T any] struct {
+type structValidator[P ~*T, T any] struct {
 	rule   *structRule[P, T]
 	format *errorFormat
 }
@@ -64,7 +60,7 @@ func (r *structValidator[P, T]) Validate(ctx context.Context, v P) error {
 }
 
 // StructError reports an error is caused in Struct validator.
-type StructError[P pointer[T], T any] struct {
+type StructError[P ~*T, T any] struct {
 	Value  P
 	Errors map[string]error
 }
@@ -92,7 +88,7 @@ var (
 )
 
 // structRule manages its fields.
-type structRule[P pointer[T], T any] struct {
+type structRule[P ~*T, T any] struct {
 	base   P
 	fields map[string]structFieldRef
 }
