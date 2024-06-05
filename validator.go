@@ -139,6 +139,7 @@ var _ Validator[string] = (*joinValidator[string])(nil)
 // OrderedMap is a map that guarantee that the iteration order of entries
 // will be the order in which they were set.
 type OrderedMap[K comparable, V any] struct {
+	// TODO(lufia): should I use rsc.io/omap?
 	keys   []K
 	values map[K]V
 }
