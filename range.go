@@ -1,15 +1,15 @@
 package validator
 
 import (
+	"cmp"
 	"context"
 	"errors"
 
-	"golang.org/x/exp/constraints"
 	"golang.org/x/text/message"
 )
 
 type ordered interface {
-	constraints.Ordered
+	cmp.Ordered
 }
 
 // Min returns the validator to verify the value is greater or equal than n.

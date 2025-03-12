@@ -3,8 +3,8 @@ package validator
 import (
 	"context"
 	"errors"
+	"slices"
 
-	"golang.org/x/exp/slices"
 	"golang.org/x/text/message"
 )
 

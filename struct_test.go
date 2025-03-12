@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"golang.org/x/exp/slices"
+	"slices"
 )
 
 func TestStruct(t *testing.T) {
