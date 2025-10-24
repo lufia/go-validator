@@ -175,7 +175,7 @@ func (m *OrderedMap[K, V]) Get(key K) (V, bool) {
 //
 // A named args is available in its error format.
 //   - value: user input (type T)
-func New[T any](fn func(v T) bool) Validator[T] {
+func New[T any](fn func(ctx context.Context, v T) bool) Validator[T] {
 	return &customValidator[T]{
 		fn:     fn,
 		format: customErrorFormat,
@@ -183,7 +183,7 @@ func New[T any](fn func(v T) bool) Validator[T] {
 }
 
 type customValidator[T any] struct {
-	fn     func(v T) bool
+	fn     func(ctx context.Context, v T) bool
 	format *errorFormat
 }
 
@@ -196,7 +196,7 @@ func (r *customValidator[T]) WithFormat(key message.Reference, a ...Arg) Validat
 
 // Validate returns the all errors that v is validated with its each validator.
 func (r *customValidator[T]) Validate(ctx context.Context, v T) error {
-	if !r.fn(v) {
+	if !r.fn(ctx, v) {
 		e := &customError[T]{
 			Value: v,
 		}

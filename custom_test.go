@@ -15,7 +15,7 @@ type CreateUserRequest struct {
 }
 
 var (
-	usernameValidator = validator.New(func(v string) bool {
+	usernameValidator = validator.New(func(ctx context.Context, v string) bool {
 		// find non-alnum or non-ascii character
 		i := strings.IndexFunc(v, func(c rune) bool {
 			switch {
@@ -32,7 +32,7 @@ var (
 		return i < 0
 	}).WithFormat("does not allow not-alphabets or not-digits")
 
-	passwordValidator = validator.New(func(r *CreateUserRequest) bool {
+	passwordValidator = validator.New(func(ctx context.Context, r *CreateUserRequest) bool {
 		return r.Password == r.ConfirmationPassword
 	}).WithFormat("passwords does not match")
 )

@@ -32,6 +32,7 @@ var (
 	minErrorFormat     = newFormat("must be no less than %[1]v", ByName("min"))
 	maxErrorFormat     = newFormat("must be no greater than %[1]v", ByName("max"))
 	inRangeErrorFormat = newFormat("must be in range(%[1]v ... %[2]v)", ByName("min"), ByName("max"))
+	pointerErrorFormat = newFormat("must not be nil")
 
 	structFieldErrorFormat = newFormat("%[1]s: %[2]v", ByName("name"), ByName("error"))
 )
