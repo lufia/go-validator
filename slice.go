@@ -6,6 +6,7 @@ import (
 	"golang.org/x/text/message"
 )
 
+// Slice returns the validator to verify a slice.
 func Slice[T any](vs ...Validator[T]) Validator[[]T] {
 	return &sliceValidator[[]T, T]{
 		vs: vs,

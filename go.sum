@@ -1,2 +1,4 @@
+github.com/lufia/go-pointer v1.2.0 h1:5HIEcHR1OUgNXXIRmpbKHrX6NSKBpLtmNrBkwysrco8=
+github.com/lufia/go-pointer v1.2.0/go.mod h1:C8FFRID2DLjwQAXjOHlAhKv6/1oLL8wviYq1i7aL7Dc=
 golang.org/x/text v0.30.0 h1:yznKA/E9zq54KzlzBEAWn1NXSQ8DIp/NYMy88xJjl4k=
 golang.org/x/text v0.30.0/go.mod h1:yDdHFIX9t+tORqspjENWgzaCVXgk0yYnYuSZ8UzzBVM=

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/lufia/go-pointer"
 	"github.com/lufia/go-validator"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -13,7 +14,7 @@ func Example() {
 	type (
 		User struct {
 			ID   string
-			Name string
+			Name *string
 		}
 		Request struct {
 			User    *User
@@ -24,13 +25,18 @@ func Example() {
 	var requestValidator = validator.Struct(func(s validator.StructRule, r *Request) {
 		validator.AddField(s, &r.User, "user", validator.Struct(func(s validator.StructRule, u *User) {
 			validator.AddField(s, &u.ID, "id", validator.Length[string](5, 10))
-			validator.AddField(s, &u.Name, "name", validator.Required[string]())
+			validator.AddField(s, &u.Name, "name", validator.Pointer(
+				validator.Required[string](),
+			))
 		}))
 		validator.AddField(s, &r.Options, "options",
 			validator.Slice(validator.In("option1", "option2")))
 	})
 
 	var r Request
+	r.User = &User{
+		Name: pointer.New(""),
+	}
 	r.Options = []string{"option3"}
 	err := requestValidator.Validate(context.Background(), &r)
 	fmt.Println(err)
