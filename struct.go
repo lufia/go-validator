@@ -196,7 +196,7 @@ func (f *structField[T]) offsetFrom(base any) uintptr {
 
 func (f *structField[T]) valueOf(base any, index []int) any {
 	bp := reflect.ValueOf(base)
-	if bp.IsNil() {
+	if bp.IsNil() { // TODO(lufia): fix?
 		var t T
 		return t
 	}
