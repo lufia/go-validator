@@ -21,7 +21,7 @@ func Example_customMessage() {
 	}
 	v := validator.Struct(func(s validator.StructRule, r *Data) {
 		validator.AddField(s, &r.Name, "name",
-			validator.Length[string](3, 100).WithFormat("must be of length %[1]d to %[2]d", validator.ByName("min"), validator.ByName("max")),
+			validator.Length[string](3, 100).WithFormat("must be of length %[1]d to %[2]d", validator.ByPath("min"), validator.ByPath("max")),
 		)
 	})
 	p := message.NewPrinter(language.English)

@@ -9,7 +9,7 @@ import (
 )
 
 type CreateUserRequest struct {
-	Name                 string
+	Name                 string `arg:"name"`
 	Password             string
 	ConfirmationPassword string
 }
@@ -34,7 +34,7 @@ var (
 
 	passwordValidator = validator.New(func(ctx context.Context, r *CreateUserRequest) bool {
 		return r.Password == r.ConfirmationPassword
-	}).WithFormat("passwords does not match")
+	}).WithFormat("name '%[1]s' passwords does not match", validator.ByPath("value", "name"))
 )
 
 var createUserRequestValidator = validator.Join(
@@ -63,5 +63,5 @@ func Example_customValidator() {
 	// name: does not allow not-alphabets or not-digits
 	// password: the length must be no less than 8
 	// confirmation-password: the length must be no less than 8
-	// passwords does not match
+	// name '.adm' passwords does not match
 }

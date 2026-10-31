@@ -24,7 +24,7 @@ func TestContextDefault(t *testing.T) {
 	ctx := context.Background()
 	e := &Err{Body: "hello"}
 	format := "err: %v"
-	s := ctxPrint(ctx, e, format, []Arg{ByName("body")})
+	s := ctxPrint(ctx, e, format, []Arg{ByPath("body")})
 	if want := "err: hello"; s != want {
 		t.Errorf("ctxPrint(%q) = %q; want %q", format, s, want)
 	}
@@ -37,7 +37,7 @@ func TestContextPrinter(t *testing.T) {
 	ctx := WithPrinter(context.Background(), &testPrinter{})
 	e := &Err{Body: "hello"}
 	format := "err: %v"
-	s := ctxPrint(ctx, e, format, []Arg{ByName("body")})
+	s := ctxPrint(ctx, e, format, []Arg{ByPath("body")})
 	if want := "[err: hello]"; s != want {
 		t.Errorf("ctxPrint(%q) writes %q; want %q", format, s, want)
 	}

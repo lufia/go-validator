@@ -64,9 +64,9 @@ Additionally these validators provides to modify its each default message to app
 
 For example:
 
-	v := validator.Min(3).WithFormat("%[1]v is not valid", validator.ByName("value"))
+	v := validator.Min(3).WithFormat("%[1]v is not valid", validator.ByPath("value"))
 
-It is different for each the validator to be available argument names with ByName.
+It is different for each the validator to be available argument names with ByPath.
 See each the validator documentation.
 
 # Internationalization

@@ -21,19 +21,19 @@ type errorFormat struct {
 
 var (
 	requiredErrorFormat = newFormat("cannot be the zero value")
-	inErrorFormat       = newFormat("must be a valid value in %[1]v", ByName("validValues"))
-	patternErrorFormat  = newFormat("must match the pattern /%[1]v/", ByName("pattern"))
+	inErrorFormat       = newFormat("must be a valid value in %[1]v", ByPath("validValues"))
+	patternErrorFormat  = newFormat("must match the pattern /%[1]v/", ByPath("pattern"))
 	customErrorFormat   = newFormat("must be a valid value")
 
-	minLengthErrorFormat = newFormat("the length must be no less than %[1]d", ByName("min"))
-	maxLengthErrorFormat = newFormat("the length must be no greater than %[1]d", ByName("max"))
-	lengthErrorFormat    = newFormat("the length must be in range(%[1]d ... %[2]d)", ByName("min"), ByName("max"))
+	minLengthErrorFormat = newFormat("the length must be no less than %[1]d", ByPath("min"))
+	maxLengthErrorFormat = newFormat("the length must be no greater than %[1]d", ByPath("max"))
+	lengthErrorFormat    = newFormat("the length must be in range(%[1]d ... %[2]d)", ByPath("min"), ByPath("max"))
 
-	minErrorFormat     = newFormat("must be no less than %[1]v", ByName("min"))
-	maxErrorFormat     = newFormat("must be no greater than %[1]v", ByName("max"))
-	inRangeErrorFormat = newFormat("must be in range(%[1]v ... %[2]v)", ByName("min"), ByName("max"))
+	minErrorFormat     = newFormat("must be no less than %[1]v", ByPath("min"))
+	maxErrorFormat     = newFormat("must be no greater than %[1]v", ByPath("max"))
+	inRangeErrorFormat = newFormat("must be in range(%[1]v ... %[2]v)", ByPath("min"), ByPath("max"))
 
-	structFieldErrorFormat = newFormat("%[1]s: %[2]v", ByName("name"), ByName("error"))
+	structFieldErrorFormat = newFormat("%[1]s: %[2]v", ByPath("name"), ByPath("error"))
 )
 
 func newFormat(key string, a ...Arg) *errorFormat {
