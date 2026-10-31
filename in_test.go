@@ -20,7 +20,7 @@ func TestIn(t *testing.T) {
 
 func TestInWithFormat(t *testing.T) {
 	t.Run("printer", func(t *testing.T) {
-		v := In("a", "b").WithFormat("must in %v", ByName("validValues"))
+		v := In("a", "b").WithFormat("must in %v", ByPath("validValues"))
 		testValidate(t, v, "x", "must in [a b]")
 	})
 }

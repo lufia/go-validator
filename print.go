@@ -38,7 +38,12 @@ func ctxPrint(ctx context.Context, v any, key message.Reference, args []Arg) str
 }
 
 func ByName(name string) Arg {
-	return &namedArg{name: name}
+	return &namedArg{names: []string{name}}
+}
+
+// ByPath refers to a object by names.
+func ByPath(names ...string) Arg {
+	return &namedArg{names: names}
 }
 
 type Arg interface {
@@ -46,20 +51,34 @@ type Arg interface {
 }
 
 type namedArg struct {
-	name string
+	names []string
 }
 
 func (a *namedArg) ValueOf(v any) any {
+	if len(a.names) == 0 {
+		return nil
+	}
+	for _, name := range a.names {
+		n, ok := valueOf(v, name)
+		if !ok {
+			return nil
+		}
+		v = n
+	}
+	return v
+}
+
+func valueOf(v any, name string) (any, bool) {
 	p := reflect.ValueOf(v)
 	if p.Kind() == reflect.Pointer {
 		p = p.Elem()
 	}
 	for _, f := range reflect.VisibleFields(p.Type()) {
-		if f.Tag.Get("arg") != a.name {
+		if f.Tag.Get("arg") != name {
 			continue
 		}
 		v := p.FieldByIndex(f.Index)
-		return v.Interface()
+		return v.Interface(), true
 	}
-	return nil
+	return nil, false
 }
