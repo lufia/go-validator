@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lufia/go-pointer"
 	"github.com/lufia/go-validator"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -35,7 +34,7 @@ func Example() {
 
 	var r Request
 	r.User = &User{
-		Name: pointer.New(""),
+		Name: new(""),
 	}
 	r.Options = []string{"option3"}
 	err := requestValidator.Validate(context.Background(), &r)

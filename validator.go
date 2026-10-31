@@ -131,7 +131,7 @@ func (r *joinValidator[T]) Validate(ctx context.Context, v T) error {
 			errs = append(errs, err)
 		}
 	}
-	return joinErrors(errs...)
+	return errors.Join(errs...)
 }
 
 var _ Validator[string] = (*joinValidator[string])(nil)
