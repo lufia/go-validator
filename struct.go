@@ -67,7 +67,7 @@ type StructError[P ~*T, T any] struct {
 
 // Error implements the error interface.
 func (e StructError[P, T]) Error() string {
-	return joinErrors(e.Unwrap()...).Error()
+	return errors.Join(e.Unwrap()...).Error()
 }
 
 // Unwrap returns each errors of err.
@@ -162,10 +162,7 @@ func (r *structField[T]) validateField(ctx context.Context, base any, key messag
 			errs = append(errs, err)
 		}
 	}
-	if len(errs) > 0 {
-		return joinErrors(errs...)
-	}
-	return nil
+	return errors.Join(errs...)
 }
 
 func wrapErrors(err error, fn func(err error) error) error {
@@ -173,7 +170,7 @@ func wrapErrors(err error, fn func(err error) error) error {
 	for i, err := range errs {
 		errs[i] = fn(err)
 	}
-	return joinErrors(errs...)
+	return errors.Join(errs...)
 }
 
 func flattenErrors(err error) []error {

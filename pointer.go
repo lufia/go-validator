@@ -2,6 +2,7 @@ package validator
 
 import (
 	"context"
+	"errors"
 
 	"golang.org/x/text/message"
 )
@@ -37,8 +38,5 @@ func (r *pointerValidator[P, T]) Validate(ctx context.Context, p P) error {
 			errs = append(errs, err)
 		}
 	}
-	if len(errs) > 0 {
-		return joinErrors(errs...)
-	}
-	return nil
+	return errors.Join(errs...)
 }

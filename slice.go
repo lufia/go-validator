@@ -2,6 +2,7 @@ package validator
 
 import (
 	"context"
+	"errors"
 
 	"golang.org/x/text/message"
 )
@@ -37,7 +38,7 @@ func (r *sliceValidator[S, T]) Validate(ctx context.Context, v S) error {
 			}
 		}
 		if len(errs) > 0 {
-			m.set(i, joinErrors(errs...))
+			m.set(i, errors.Join(errs...))
 		}
 	}
 	if m.Len() > 0 {
@@ -57,7 +58,7 @@ type SliceError[S ~[]T, T any] struct {
 
 // Error implements the error interface.
 func (e SliceError[S, T]) Error() string {
-	return joinErrors(e.Unwrap()...).Error()
+	return errors.Join(e.Unwrap()...).Error()
 }
 
 // Unwrap returns each errors of err.
