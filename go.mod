@@ -2,7 +2,4 @@ module github.com/lufia/go-validator
 
 go 1.26.0
 
-require (
-	github.com/lufia/go-pointer v1.2.0
-	golang.org/x/text v0.42.0
-)
+require golang.org/x/text v0.42.0
